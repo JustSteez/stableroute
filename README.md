@@ -4,8 +4,8 @@
 
 Entry for **zkVerify Agent Games 2026, Event 03: Wildcard** (DeFi).
 
-- **Live demo:** `https://<your-deployment>/`
-- **Agent endpoint:** `POST https://<your-deployment>/agent` (HMAC-signed, Agent Games protocol v1)
+- **Live demo:** https://stableroute-phi.vercel.app/
+- **Agent endpoint:** `POST https://stableroute-phi.vercel.app/agent` (HMAC-signed, Agent Games protocol v1)
 - **Public API:** `POST /route`, `POST /ask`, `GET /health`
 
 ![StableRoute demo (offline test data)](docs/demo.png)

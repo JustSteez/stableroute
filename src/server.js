@@ -127,4 +127,8 @@ const server = http.createServer(async (req, res) => {
 if (require.main === module) {
   server.listen(PORT, () => console.log(`StableRoute listening on :${PORT} (zkVerify: ${kurier.enabled() ? 'on' : 'local proofs only'})`));
 }
-module.exports = { server, run };
+// Default export is the server itself (Vercel's Node runtime serves it directly);
+// named exports stay for the tests.
+module.exports = server;
+module.exports.server = server;
+module.exports.run = run;
