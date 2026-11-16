@@ -64,7 +64,19 @@ function check(c, p) {
   return fails;
 }
 
+// Same six checks as booleans, for the UI's check grid.
+function checkMap(c, p) {
+  return {
+    size: c.tvl >= p.minTvl,
+    share: p.amount * 10000 <= c.tvl * p.capBps,
+    organic: c.base * 10000 >= p.minBaseShareBps * (c.base + c.reward),
+    steady: (c.base + c.reward) * 100 <= p.maxSpikePct * c.mean30,
+    bluechip: !p.requireBlue || !!c.blue,
+    outlook: !!p.allowDown || !c.down,
+  };
+}
+
 const fmt = (n) => n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(n);
 const pct = (a, b) => (b === 0 ? '0%' : Math.round((a / b) * 100) + '%');
 
-module.exports = { TIERS, BLUE_CHIP, policyFor, score, check, fmt };
+module.exports = { TIERS, BLUE_CHIP, policyFor, score, check, checkMap, fmt };

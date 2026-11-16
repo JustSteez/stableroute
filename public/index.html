@@ -3,130 +3,344 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>StableRoute: stablecoin yield router with proofs</title>
+<title>StableRoute: find a safe yield for your stablecoins</title>
+<meta name="description" content="StableRoute checks live stablecoin yields, rejects the traps, picks the best safe pool and proves the pick on zkVerify.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0b0d10; --card:#14171c; --line:#252a31; --ink:#e9edf2; --mute:#8b95a3; --ok:#3ddc97; --bad:#ff6b6b; --acc:#7c9cff; }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
-  main { max-width:960px; margin:0 auto; padding:40px 20px 80px; }
-  h1 { font-size:30px; margin:0 0 6px; letter-spacing:-.02em; }
-  h1 span { color:var(--acc); }
-  .sub { color:var(--mute); margin:0 0 28px; max-width:680px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; margin-bottom:16px; }
-  label { font-size:12px; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; display:block; margin-bottom:6px; }
-  input, select { width:100%; background:#0f1216; color:var(--ink); border:1px solid var(--line); border-radius:9px; padding:10px 12px; font:inherit; }
-  .row { display:grid; grid-template-columns:1.2fr 1fr 1fr 1.4fr; gap:12px; margin-top:14px; }
-  @media (max-width:700px){ .row { grid-template-columns:1fr 1fr; } }
-  button { background:var(--acc); color:#0b0d10; border:0; border-radius:9px; padding:11px 18px; font:600 15px inherit; cursor:pointer; }
-  button.ghost { background:transparent; color:var(--ink); border:1px solid var(--line); }
-  button:disabled { opacity:.5; cursor:wait; }
-  .actions { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
-  .pick h2 { margin:0 0 4px; font-size:22px; }
-  .big { font-size:40px; font-weight:700; letter-spacing:-.02em; }
-  .stats { display:flex; gap:28px; flex-wrap:wrap; margin:10px 0; }
-  .stats div small { display:block; color:var(--mute); font-size:12px; }
-  table { width:100%; border-collapse:collapse; font-size:14px; }
-  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
-  th { color:var(--mute); font-weight:500; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
-  .pass { color:var(--ok); font-weight:600; } .fail { color:var(--bad); font-weight:600; }
-  .reasons { color:var(--mute); font-size:13px; }
-  .tag { display:inline-block; font-size:11px; padding:2px 7px; border-radius:99px; background:#1d2430; color:var(--acc); margin-left:6px; }
-  code, pre { font:12px/1.5 ui-monospace,Menlo,monospace; }
-  pre { background:#0f1216; border:1px solid var(--line); border-radius:9px; padding:12px; overflow:auto; max-height:240px; }
-  .muted { color:var(--mute); } .err { color:var(--bad); }
-  .hidden { display:none; }
-  a { color:var(--acc); }
+  :root {
+    --paper: #edf1ee;
+    --surface: #fafcfb;
+    --ink: #0e2a22;
+    --mute: #5e7169;
+    --line: #c9d5ce;
+    --soft: #dfe7e2;
+    --blue: #2462c9;
+    --blue-wash: #e3ecfa;
+    --pass: #17855a;
+    --fail: #b9412c;
+    --fail-wash: #f6e4df;
+    --r-sm: 8px;
+    --r-lg: 18px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 400 16px/1.55 "Onest", ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "tnum" 1;
+  }
+  a { color: var(--blue); }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* top bar */
+  .bar { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
+  .mark { width: 28px; height: 28px; }
+
+  /* hero + ask */
+  .hero { padding: 48px 0 28px; }
+  h1 { font-size: clamp(36px, 6vw, 64px); line-height: 1.02; letter-spacing: -.035em; font-weight: 800; margin: 0 0 14px; max-width: 13ch; }
+  .lede { color: var(--mute); max-width: 58ch; margin: 0 0 32px; font-size: 18px; }
+
+  .ask { display: flex; gap: 8px; background: var(--surface); border: 1.5px solid var(--ink); border-radius: 999px; padding: 6px 6px 6px 22px; max-width: 760px; }
+  .ask input { flex: 1; border: 0; background: transparent; font-size: 18px; min-width: 0; outline: none; }
+  .ask:focus-within { box-shadow: 0 0 0 4px var(--blue-wash); }
+  @media (max-width: 560px) {
+    .ask { flex-direction: column; border-radius: 22px; padding: 14px; }
+    .ask input { font-size: 17px; padding: 2px 4px 8px; }
+    .pick { padding: 24px 20px; }
+    .facts { grid-template-columns: 1fr 1fr; }
+  }
+
+  .btn { border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 600; cursor: pointer; background: var(--ink); color: var(--paper); white-space: nowrap; }
+  .btn.blue { background: var(--blue); color: #fff; }
+  .btn.line { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn.line:hover { border-color: var(--ink); }
+  .btn:disabled { opacity: .55; cursor: progress; }
+
+  /* settings */
+  .settings { display: flex; flex-wrap: wrap; gap: 28px 36px; margin-top: 26px; align-items: flex-start; }
+  .field > span { display: block; font-size: 13px; color: var(--mute); margin-bottom: 8px; font-weight: 500; }
+  .amount { display: flex; align-items: center; border-bottom: 1.5px solid var(--ink); width: 170px; }
+  .amount b { font-weight: 600; color: var(--mute); }
+  .amount input { border: 0; background: transparent; padding: 6px 4px; width: 100%; font-size: 20px; font-weight: 600; outline: none; }
+  .seg { display: inline-flex; background: var(--soft); border-radius: 999px; padding: 3px; }
+  .seg button { border: 0; background: transparent; padding: 7px 14px; border-radius: 999px; cursor: pointer; font-weight: 500; font-size: 14px; color: var(--mute); }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 0 var(--line); }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pills button { border: 1.5px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 13px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--mute); }
+  .pills button[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); background: var(--surface); }
+  .tierNote { font-size: 13px; color: var(--mute); margin-top: 8px; max-width: 34ch; }
+
+  /* result */
+  .result { margin: 44px 0 0; display: grid; grid-template-columns: 1.55fr 1fr; gap: 0; background: var(--surface); border-radius: var(--r-lg); border: 1px solid var(--line); overflow: hidden; }
+  @media (max-width: 820px) { .result { grid-template-columns: 1fr; } }
+  .pick { padding: 32px; }
+  .pick .where { font-size: 15px; color: var(--mute); margin: 0 0 4px; }
+  .pick h2 { margin: 0; font-size: 28px; letter-spacing: -.02em; }
+  .meta { color: var(--mute); font-size: 14px; }
+  .apy { display: flex; align-items: baseline; gap: 18px; margin: 22px 0 6px; flex-wrap: wrap; }
+  .apy strong { font-size: clamp(56px, 9vw, 92px); line-height: .9; letter-spacing: -.045em; font-weight: 800; }
+  .apy em { font-style: normal; color: var(--mute); }
+  .split { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: var(--soft); max-width: 420px; margin: 14px 0 6px; }
+  .split i { display: block; }
+  .legend { font-size: 13px; color: var(--mute); display: flex; gap: 16px; flex-wrap: wrap; }
+  .legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; background: var(--c); vertical-align: 0; }
+  .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 26px 0; padding: 18px 0; border-top: 1px solid var(--soft); border-bottom: 1px solid var(--soft); }
+  .facts div { font-size: 13px; color: var(--mute); }
+  .facts b { display: block; font-size: 20px; color: var(--ink); letter-spacing: -.01em; }
+  .summary { max-width: 60ch; margin: 0 0 22px; }
+  .deposit { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .fine { font-size: 13px; color: var(--mute); margin: 12px 0 0; max-width: 56ch; }
+
+  .none h2 { font-size: 30px; }
+
+  /* proof receipt */
+  .receipt { background: var(--ink); color: #d7e3dd; padding: 32px 28px; position: relative; }
+  .receipt h3 { margin: 0 0 4px; color: #fff; font-size: 18px; }
+  .receipt p { margin: 0 0 18px; font-size: 14px; color: #9fb4aa; }
+  .receipt dl { margin: 0; font-size: 14px; }
+  .receipt dl div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px dashed #2f4c42; }
+  .receipt dt { color: #9fb4aa; }
+  .receipt dd { margin: 0; text-align: right; color: #fff; font-weight: 500; overflow-wrap: anywhere; }
+  .receipt code { font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .ok { color: #6fe0a8 !important; } .bad { color: #ff9b8a !important; } .wait { color: #f2d27a !important; }
+  .receipt .btn.line { border-color: #2f4c42; color: #d7e3dd; margin-top: 18px; padding: 9px 16px; font-size: 14px; }
+
+  /* check grid: the centrepiece */
+  .checks { margin: 56px 0 0; }
+  .checks h2 { font-size: 26px; letter-spacing: -.02em; margin: 0 0 6px; }
+  .checks > p { color: var(--mute); margin: 0 0 22px; max-width: 64ch; }
+  .gridwrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); }
+  table { border-collapse: collapse; width: 100%; min-width: 820px; }
+  th { text-align: center; font-size: 13px; font-weight: 500; color: var(--mute); padding: 16px 8px 12px; line-height: 1.25; }
+  th:first-child, td:first-child { text-align: left; padding-left: 24px; }
+  th.num, td.num { text-align: right; padding-right: 18px; }
+  td { padding: 14px 8px; border-top: 1px solid var(--soft); vertical-align: middle; text-align: center; }
+  tr.picked td { background: var(--blue-wash); }
+  tr.picked td:first-child { box-shadow: inset 4px 0 0 var(--blue); }
+  tr.rejected .poolname { color: var(--mute); }
+  .poolname { font-weight: 600; }
+  .poolname small { display: block; font-weight: 400; color: var(--mute); font-size: 13px; }
+  .badge { display: inline-block; font-size: 12px; font-weight: 600; color: var(--blue); margin-left: 6px; }
+  .mark-ok, .mark-no { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 14px; font-weight: 700; }
+  .mark-ok { background: #dcefe5; color: var(--pass); }
+  .mark-no { background: var(--fail-wash); color: var(--fail); }
+  tr.why td { border-top: 0; padding: 0 24px 14px; text-align: left; font-size: 13px; color: var(--fail); }
+  .verdict { font-weight: 600; font-size: 14px; }
+  .verdict.p { color: var(--pass); } .verdict.f { color: var(--fail); }
+
+  .how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin: 72px 0 0; padding: 32px 0 0; border-top: 1.5px solid var(--ink); }
+  @media (max-width: 760px) { .how { grid-template-columns: 1fr; gap: 20px; } }
+  .how h3 { margin: 0 0 6px; font-size: 17px; }
+  .how p { margin: 0; color: var(--mute); font-size: 15px; }
+
+  footer { margin: 72px 0 40px; color: var(--mute); font-size: 14px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  .loading { padding: 48px 32px; color: var(--mute); }
+  .loading b { color: var(--ink); }
+  .err { color: var(--fail); font-size: 14px; margin-top: 14px; min-height: 1em; }
+  [hidden] { display: none !important; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 999px; font-size: 14px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .result.enter { animation: rise .45s cubic-bezier(.2,.7,.2,1); }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>Stable<span>Route</span></h1>
-  <p class="sub">Tell it how much stablecoin you want to put to work and how much risk you can take. It checks live yields across DeFi, throws out the traps (emission farms, APY spikes, thin pools), picks the best safe pool, drafts the deposit, and proves on zkVerify that the pick followed the rules.</p>
+<div class="wrap">
+  <header class="bar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 28 28" aria-hidden="true"><circle cx="5" cy="7" r="3" fill="#c9d5ce"/><circle cx="5" cy="21" r="3" fill="#c9d5ce"/><path d="M8 7c7 0 7 7 12 7M8 21c7 0 7-7 12-7" stroke="#0e2a22" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="23" cy="14" r="3.6" fill="#2462c9"/></svg>
+      StableRoute
+    </div>
+    <button class="btn line" id="connect">Connect wallet</button>
+  </header>
 
-  <div class="card">
-    <label for="ask">Ask in plain English</label>
-    <input id="ask" value="Put $10,000 USDC somewhere safe on Base">
-    <div class="row">
-      <div><label>Amount (USD)</label><input id="amount" type="number" value="10000" min="1"></div>
-      <div><label>Token</label><select id="token"><option>USDC</option><option>USDT</option><option>DAI</option><option>ANY</option></select></div>
-      <div><label>Risk</label><select id="risk"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
-      <div><label>Chains</label><input id="chains" value="Base,Ethereum,Arbitrum"></div>
-    </div>
-    <div class="actions">
-      <button id="goAsk">Ask</button>
-      <button id="goForm" class="ghost">Route with these settings</button>
-      <button id="connect" class="ghost">Connect wallet</button>
-      <span id="status" class="muted" style="align-self:center"></span>
-    </div>
-  </div>
+  <section class="hero">
+    <h1>Where should your stablecoins earn?</h1>
+    <p class="lede">StableRoute checks live yields across DeFi, rejects the traps (token-reward farms, APY spikes, thin pools), picks the best pool that passes, and proves on zkVerify that it followed the rules.</p>
 
-  <div id="out" class="hidden">
-    <div class="card pick" id="pickCard"></div>
-    <div class="card">
-      <h3 style="margin-top:0">What it looked at <span class="muted" id="statsLine" style="font-weight:400;font-size:14px"></span></h3>
-      <table><thead><tr><th>Pool</th><th>APY</th><th>TVL</th><th>Result</th></tr></thead><tbody id="rows"></tbody></table>
+    <form class="ask" id="askForm">
+      <input id="ask" aria-label="What do you want to do?" autocomplete="off" value="Put $10,000 USDC somewhere safe on Base">
+      <button class="btn blue" id="go" type="submit">Find route</button>
+    </form>
+
+    <div class="settings" aria-label="Settings">
+      <div class="field"><span>Amount</span>
+        <label class="amount"><b>$</b><input id="amount" type="number" min="1" step="any" value="10000" aria-label="Amount in US dollars"></label>
+      </div>
+      <div class="field"><span>Token</span>
+        <div class="seg" data-name="token" role="group" aria-label="Token">
+          <button type="button" data-v="USDC" aria-pressed="true">USDC</button><button type="button" data-v="USDT" aria-pressed="false">USDT</button><button type="button" data-v="DAI" aria-pressed="false">DAI</button><button type="button" data-v="ANY" aria-pressed="false">Any</button>
+        </div>
+      </div>
+      <div class="field"><span>Risk</span>
+        <div class="seg" data-name="risk" role="group" aria-label="Risk">
+          <button type="button" data-v="low" aria-pressed="true">Low</button><button type="button" data-v="medium" aria-pressed="false">Medium</button><button type="button" data-v="high" aria-pressed="false">High</button>
+        </div>
+        <div class="tierNote" id="tierNote"></div>
+      </div>
+      <div class="field"><span>Chains</span>
+        <div class="pills" id="chains" role="group" aria-label="Chains">
+          <button type="button" data-v="Base" aria-pressed="true">Base</button><button type="button" data-v="Ethereum" aria-pressed="false">Ethereum</button><button type="button" data-v="Arbitrum" aria-pressed="false">Arbitrum</button><button type="button" data-v="Optimism" aria-pressed="false">Optimism</button><button type="button" data-v="Polygon" aria-pressed="false">Polygon</button>
+        </div>
+      </div>
     </div>
-    <div class="card">
-      <h3 style="margin-top:0">Proof</h3>
-      <div id="proofBox"></div>
-      <details style="margin-top:10px"><summary class="muted">Snapshot the proof is bound to</summary><pre id="snap"></pre></details>
-    </div>
-  </div>
-</main>
+    <div class="err" id="err" role="alert"></div>
+  </section>
+
+  <section id="resultBox" aria-live="polite"></section>
+
+  <section class="checks" id="checksBox" hidden>
+    <h2>Every pool it looked at</h2>
+    <p id="checksLede"></p>
+    <div class="gridwrap"><table>
+      <thead><tr>
+        <th scope="col">Pool</th><th scope="col" class="num">APY</th><th scope="col" class="num">In pool</th>
+        <th scope="col">Pool size</th><th scope="col">Your share</th><th scope="col">Organic yield</th><th scope="col">Steady APY</th><th scope="col">Blue-chip</th><th scope="col">Outlook</th><th scope="col">Result</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+  </section>
+
+  <section class="how">
+    <div><h3>Live data, six checks</h3><p>Yields come from DeFiLlama. Each pool is checked for size, your share of it, how much yield is real versus token rewards, sudden spikes, protocol track record and outlook.</p></div>
+    <div><h3>You sign, it never holds funds</h3><p>For Aave and Compound picks it drafts the exact deposit: approve only the amount, then supply. You review and sign both in your own wallet.</p></div>
+    <div><h3>A pick you can check</h3><p>Each answer comes with a Groth16 proof, verified on zkVerify, that the pick passed every check and beat every other pool that passed. A wrong pick can't be proven.</p></div>
+  </section>
+
+  <footer><span>StableRoute · zkVerify Agent Games 2026, Wildcard</span><span>Not financial advice. Yields change and smart contracts carry risk.</span></footer>
+</div>
+
 <script>
 const $ = (id) => document.getElementById(id);
-let wallet = null, last = null;
-const fmt = (n) => n >= 1e9 ? '$' + (n/1e9).toFixed(1) + 'B' : n >= 1e6 ? '$' + (n/1e6).toFixed(1) + 'M' : '$' + Math.round(n).toLocaleString();
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+const usd = (n) => n >= 1e9 ? '$' + (n/1e9).toFixed(1) + 'B' : n >= 1e6 ? '$' + (n/1e6).toFixed(1) + 'M' : n >= 1e3 ? '$' + (n/1e3).toFixed(0) + 'K' : '$' + Math.round(n);
+const money = (n) => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
+const NOTES = {
+  low: 'Pools over $50M, blue-chip protocols only, at least 90% organic yield, no recent spike.',
+  medium: 'Pools over $10M, at least 70% organic yield, APY under 2x its monthly average.',
+  high: 'Pools over $1M, token rewards allowed, APY under 2.5x its monthly average.',
+};
+const PROJECT = { 'aave-v3':'Aave v3', 'compound-v3':'Compound v3', 'morpho-blue':'Morpho', 'morpho-v1':'Morpho', 'sparklend':'Spark', 'spark-savings':'Spark Savings', 'sky-lending':'Sky', 'fluid-lending':'Fluid', 'euler-v2':'Euler v2', 'maple':'Maple' };
+const pname = (p) => PROJECT[p] || p.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+let wallet = null, last = null;
 
-async function call(body) {
-  $('status').textContent = 'Checking live yields and building proof…';
-  document.querySelectorAll('button').forEach((b) => b.disabled = true);
+// segmented controls
+function segValue(name) { return document.querySelector(`.seg[data-name="${name}"] [aria-pressed="true"]`).dataset.v; }
+function setSeg(name, v) { document.querySelectorAll(`.seg[data-name="${name}"] button`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v))); if (name === 'risk') $('tierNote').textContent = NOTES[v]; }
+document.querySelectorAll('.seg').forEach((s) => s.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setSeg(s.dataset.name, b.dataset.v); }));
+$('chains').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const on = b.getAttribute('aria-pressed') === 'true';
+  if (on && $('chains').querySelectorAll('[aria-pressed="true"]').length === 1) return;
+  b.setAttribute('aria-pressed', String(!on));
+});
+const chains = () => [...$('chains').querySelectorAll('[aria-pressed="true"]')].map((b) => b.dataset.v);
+function setChains(list) { const l = list.map((c) => c.toLowerCase()); $('chains').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(l.includes(b.dataset.v.toLowerCase())))); }
+setSeg('risk', 'low');
+
+// settings changed by hand => route with settings; otherwise read the sentence
+let settingsTouched = false;
+document.querySelector('.settings').addEventListener('click', () => settingsTouched = true);
+$('amount').addEventListener('input', () => settingsTouched = true);
+$('ask').addEventListener('input', () => settingsTouched = false);
+
+$('askForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const body = settingsTouched
+    ? { amount: +$('amount').value, token: segValue('token'), risk: segValue('risk'), chains: chains() }
+    : { text: $('ask').value };
+  run(body);
+});
+
+async function run(body) {
+  $('err').textContent = '';
+  $('go').disabled = true; $('go').textContent = 'Checking…';
+  $('resultBox').innerHTML = '<div class="result"><div class="loading"><b>Checking live yields</b><br>Scoring every pool against your risk level and building the proof.</div><div class="receipt"></div></div>';
   try {
-    const r = await fetch(body.text ? '/ask' : '/route', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ ...body, wallet }) });
+    const r = await fetch(body.text ? '/ask' : '/route', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...body, wallet }) });
     const j = await r.json();
-    if (!j.ok) throw new Error(j.error || 'failed');
-    last = j; render(j); $('status').textContent = '';
-  } catch (e) { $('status').innerHTML = '<span class="err">' + esc(e.message) + '</span>'; }
-  finally { document.querySelectorAll('button').forEach((b) => b.disabled = false); }
+    if (!j.ok) throw new Error(j.error || 'Something went wrong. Try again.');
+    last = j; render(j); settingsTouched = false;
+  } catch (e) {
+    $('resultBox').innerHTML = '';
+    $('err').textContent = e.message;
+  } finally { $('go').disabled = false; $('go').textContent = 'Find route'; }
 }
 
 function render(j) {
-  $('out').classList.remove('hidden');
   if (j.understood) {
     const u = j.understood.params;
-    if (u.amount) $('amount').value = u.amount; if (u.token) $('token').value = u.token; if (u.risk) $('risk').value = u.risk;
-    if (u.chains) $('chains').value = u.chains.join(',');
+    if (u.amount) $('amount').value = u.amount;
+    if (u.token) setSeg('token', u.token);
+    if (u.risk) setSeg('risk', u.risk);
+    if (u.chains) setChains(u.chains);
   }
-  const p = j.pick;
-  let h = '';
+  const p = j.pick, amt = j.policy.amount;
+  let left;
   if (p) {
-    h += `<label>${esc(j.policy.label)} pick</label><h2>${esc(p.project)} · ${esc(p.symbol)} on ${esc(p.chain)}${p.poolMeta ? ' <span class="tag">' + esc(p.poolMeta) + '</span>' : ''}</h2>`;
-    h += `<div class="stats"><div><span class="big">${p.apy.toFixed(2)}%</span><small>APY now</small></div>`;
-    h += `<div><b>${p.apyBase.toFixed(2)}%</b><small>organic</small></div><div><b>${p.apyReward.toFixed(2)}%</b><small>token rewards</small></div>`;
-    h += `<div><b>${p.apyMean30d.toFixed(2)}%</b><small>30-day avg</small></div><div><b>${fmt(p.tvlUsd)}</b><small>in pool</small></div>`;
-    h += `<div><b>~$${p.estYearlyUsd.toLocaleString()}</b><small>per year</small></div></div>`;
-  } else {
-    h += `<label>${esc(j.policy.label)}</label><h2>No safe route</h2>`;
-  }
-  h += `<p>${esc(j.summary)}</p>`;
-  if (p) {
+    const tot = p.apyBase + p.apyReward || 1;
     const d = p.deposit;
-    if (d.supported && d.steps) h += `<div class="actions"><button onclick="deposit()">Deposit with my wallet (${d.steps.length} txs)</button><a href="${d.link}" target="_blank" style="align-self:center">Pool data</a></div><p class="muted" style="font-size:13px">You review and sign each transaction in your own wallet. StableRoute never holds keys.</p>`;
-    else if (d.needsWallet) h += `<p class="muted">Connect a wallet and route again to get a ready-to-sign deposit.</p>`;
-    else h += `<p class="muted">Direct deposit drafts cover Aave v3 and Compound v3. For this pool, deposit on the protocol's site: <a href="${d.link}" target="_blank">pool details</a>.</p>`;
+    let dep;
+    if (d.supported && d.steps) dep = `<div class="deposit"><button class="btn blue" id="depositBtn">Deposit ${money(amt)} ${esc(p.symbol)}</button><a href="${esc(d.link)}" target="_blank" rel="noopener">Pool details</a></div><p class="fine">Two transactions: approve exactly ${money(amt)} ${esc(p.symbol)}, then supply it to ${esc(pname(p.project))}. You sign both in your wallet.</p>`;
+    else if (d.needsWallet) dep = `<div class="deposit"><button class="btn blue" id="connectAgain">Connect wallet to deposit</button></div><p class="fine">${esc(pname(p.project))} needs your address to credit the deposit.</p>`;
+    else dep = `<div class="deposit"><a class="btn blue" style="text-decoration:none" href="${esc(d.link)}" target="_blank" rel="noopener">Open pool</a></div><p class="fine">One-click deposits cover Aave v3 and Compound v3. Deposit in this pool from ${esc(pname(p.project))}'s own app.</p>`;
+    left = `<div class="pick">
+      <p class="where">${esc(j.policy.label)} route for ${money(amt)}</p>
+      <h2>${esc(pname(p.project))} ${esc(p.symbol)} on ${esc(p.chain)}</h2>
+      ${p.poolMeta ? `<div class="meta">${esc(p.poolMeta)}</div>` : ''}
+      <div class="apy"><strong>${p.apy.toFixed(2)}%</strong><em>APY, about ${money(p.estYearlyUsd)} a year</em></div>
+      <div class="split" role="img" aria-label="${p.apyBase.toFixed(2)}% organic, ${p.apyReward.toFixed(2)}% token rewards"><i style="width:${p.apyBase / tot * 100}%;background:var(--pass)"></i><i style="width:${p.apyReward / tot * 100}%;background:#e0a63a"></i></div>
+      <div class="legend"><span style="--c:var(--pass)">${p.apyBase.toFixed(2)}% organic</span><span style="--c:#e0a63a">${p.apyReward.toFixed(2)}% token rewards</span></div>
+      <div class="facts"><div><b>${usd(p.tvlUsd)}</b>in the pool</div><div><b>${p.apyMean30d.toFixed(2)}%</b>30-day average</div><div><b>${j.stats.passing} of ${j.stats.considered}</b>pools passed</div></div>
+      ${dep}
+    </div>`;
+  } else {
+    left = `<div class="pick none"><p class="where">${esc(j.policy.label)} route for ${money(amt)}</p><h2>No pool is safe enough</h2><p class="summary">${esc(j.summary)}</p>
+      <div class="deposit">${j.policy.risk !== 'high' ? `<button class="btn line" id="loosen">Try ${j.policy.risk === 'low' ? 'medium' : 'high'} risk</button>` : ''}</div></div>`;
   }
-  $('pickCard').innerHTML = h;
-  $('statsLine').textContent = `· ${j.stats.passing} of ${j.stats.considered} pools passed. Showing the ${j.shortlist.length} in the proof.`;
-  $('rows').innerHTML = j.shortlist.map((s) => `<tr><td>${s.picked ? '★ ' : ''}${esc(s.project)} <span class="muted">${esc(s.symbol)} · ${esc(s.chain)}</span></td>
-    <td>${s.apy.toFixed(2)}%${s.apyReward ? `<div class="reasons">${s.apyReward.toFixed(2)}% rewards</div>` : ''}</td><td>${fmt(s.tvlUsd)}</td>
-    <td>${s.passed ? '<span class="pass">Passed</span>' + (s.picked ? ' · picked' : '') : '<span class="fail">Rejected</span><div class="reasons">' + s.reasons.map(esc).join('<br>') + '</div>'}</td></tr>`).join('');
-  const pr = j.proof, z = j.zkverify || {};
-  let ph = `<p>Groth16 proof ${pr.verifiedLocally ? '<span class="pass">verified</span>' : '<span class="fail">failed</span>'} (${pr.provingMs} ms). It proves the pick passed every rule above and scored highest of all pools that passed, for the snapshot hash <code>${j.snapshotHash.slice(0, 18)}…</code>.</p>`;
-  if (z.submitted) ph += `<p>Submitted to zkVerify via Kurier. Job <code>${esc(z.jobId)}</code>: <span id="zst">checking…</span></p>`;
-  else ph += `<p class="muted">zkVerify submission: ${esc(z.reason || z.error || 'off')}</p>`;
-  $('proofBox').innerHTML = ph;
-  $('snap').textContent = JSON.stringify(j.snapshot, null, 2);
+  const pr = j.proof || {}, z = j.zkverify || {};
+  const zk = z.submitted ? `<span class="wait" id="zst">Submitted</span>` : `<span class="bad">${esc(z.error ? 'Submission failed' : 'Not sent')}</span>`;
+  const right = `<aside class="receipt">
+    <h3>Proof of route</h3>
+    <p>Proves the ${p ? 'pick passed all six checks and scored highest of every pool that passed' : 'no pool passed all six checks'}, for this exact data.</p>
+    <dl>
+      <div><dt>Decision</dt><dd>${p ? 'Route' : 'No safe route'}</dd></div>
+      <div><dt>Groth16 proof</dt><dd class="${pr.verifiedLocally ? 'ok' : 'bad'}">${pr.verifiedLocally ? 'Valid' : 'Invalid'} · ${pr.provingMs ?? '–'} ms</dd></div>
+      <div><dt>Data snapshot</dt><dd><code>${esc(j.snapshotHash.slice(0, 10))}…${esc(j.snapshotHash.slice(-6))}</code></dd></div>
+      <div><dt>zkVerify</dt><dd>${zk}</dd></div>
+      ${z.jobId ? `<div><dt>Job</dt><dd><code>${esc(z.jobId.slice(0, 8))}…</code></dd></div>` : ''}
+    </dl>
+    <button class="btn line" id="copyProof">Copy proof JSON</button>
+  </aside>`;
+  $('resultBox').innerHTML = `<div class="result enter">${left}${right}</div>`;
+
+  // grid
+  const order = ['size', 'share', 'organic', 'steady', 'bluechip', 'outlook'];
+  $('checksLede').textContent = `${j.stats.considered} ${j.stats.considered === 1 ? 'pool matched' : 'pools matched'} your token and chains; ${j.stats.passing} passed. These ${j.shortlist.length} are the ones in the proof: the best that passed, and the highest yields it turned down.`;
+  $('rows').innerHTML = j.shortlist.map((s) => {
+    const cells = order.map((k) => s.checks[k] ? '<td><span class="mark-ok" aria-label="passed">✓</span></td>' : '<td><span class="mark-no" aria-label="failed">✕</span></td>').join('');
+    const cls = s.picked ? 'picked' : s.passed ? '' : 'rejected';
+    const verdict = s.picked ? '<span class="verdict" style="color:var(--blue)">Picked</span>' : s.passed ? '<span class="verdict p">Passed</span>' : '<span class="verdict f">Rejected</span>';
+    const row = `<tr class="${cls}"><td><div class="poolname">${esc(pname(s.project))}${s.blueChip ? '<span class="badge">Blue-chip</span>' : ''}<small>${esc(s.symbol)} on ${esc(s.chain)}</small></div></td>
+      <td class="num"><b>${s.apy.toFixed(2)}%</b></td><td class="num">${usd(s.tvlUsd)}</td>${cells}<td>${verdict}</td></tr>`;
+    return row + (s.passed ? '' : `<tr class="why"><td colspan="10">${s.reasons.map(esc).join(' · ')}</td></tr>`);
+  }).join('');
+  $('checksBox').hidden = false;
+
+  const dB = $('depositBtn'); if (dB) dB.onclick = deposit;
+  const cA = $('connectAgain'); if (cA) cA.onclick = async () => { await connect(); if (wallet) run({ amount: amt, token: j.policy && segValue('token'), risk: j.policy.risk, chains: chains() }); };
+  const lo = $('loosen'); if (lo) lo.onclick = () => { setSeg('risk', j.policy.risk === 'low' ? 'medium' : 'high'); run({ amount: amt, token: segValue('token'), risk: segValue('risk'), chains: chains() }); };
+  $('copyProof').onclick = async () => { await navigator.clipboard.writeText(JSON.stringify({ proof: pr.proof, publicSignals: pr.publicSignals, snapshot: j.snapshot }, null, 2)); toast('Proof copied'); };
   if (z.submitted) poll(z.jobId, 0);
 }
 
@@ -134,39 +348,43 @@ async function poll(id, n) {
   try {
     const s = await (await fetch('/proof-status/' + encodeURIComponent(id))).json();
     const el = $('zst'); if (!el) return;
-    el.innerHTML = esc(s.status || 'unknown') + (s.txHash ? ` · tx <code>${esc(s.txHash)}</code>` : '');
-    if (!/finalized|aggregated|failed/i.test(s.status || '') && n < 40) setTimeout(() => poll(id, n + 1), 4000);
-  } catch { /* ignore */ }
+    const st = s.status || 'Pending';
+    el.textContent = st;
+    el.className = /finalized|aggregated/i.test(st) ? 'ok' : /fail/i.test(st) ? 'bad' : 'wait';
+    if (!/finalized|aggregated|fail/i.test(st) && n < 40) setTimeout(() => poll(id, n + 1), 4000);
+  } catch { /* keep last status */ }
 }
 
+function toast(msg) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
+
 async function connect() {
-  if (!window.ethereum) { $('status').textContent = 'No browser wallet found.'; return; }
-  const [a] = await window.ethereum.request({ method: 'eth_requestAccounts' });
-  wallet = a; $('connect').textContent = a.slice(0, 6) + '…' + a.slice(-4);
+  if (!window.ethereum) { toast('Install a browser wallet like MetaMask or Rabby to deposit.'); return; }
+  try {
+    const [a] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    wallet = a; $('connect').textContent = a.slice(0, 6) + '…' + a.slice(-4);
+  } catch { toast('Wallet connection cancelled.'); }
 }
+$('connect').onclick = connect;
 
 async function deposit() {
   const d = last?.pick?.deposit; if (!d?.steps) return;
-  if (!wallet) await connect();
+  if (!wallet) { await connect(); if (!wallet) return; }
+  const btn = $('depositBtn'); btn.disabled = true;
   try {
     await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x' + d.chainId.toString(16) }] });
-    for (const s of d.steps) {
-      $('status').textContent = s.label + ': confirm in your wallet…';
+    for (const [i, s] of d.steps.entries()) {
+      btn.textContent = `Step ${i + 1} of ${d.steps.length}: confirm in wallet`;
       const hash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: wallet, to: s.to, data: s.data, value: s.value }] });
-      $('status').textContent = s.label + ': waiting for confirmation…';
-      for (let i = 0; i < 90; i++) {
+      btn.textContent = `Step ${i + 1} of ${d.steps.length}: confirming on-chain`;
+      for (let k = 0; k < 90; k++) {
         const rc = await window.ethereum.request({ method: 'eth_getTransactionReceipt', params: [hash] });
-        if (rc) { if (rc.status !== '0x1') throw new Error(s.label + ' failed on-chain'); break; }
+        if (rc) { if (rc.status !== '0x1') throw new Error(s.label + ' failed on-chain.'); break; }
         await new Promise((r) => setTimeout(r, 2000));
       }
     }
-    $('status').textContent = 'Deposit sent.';
-  } catch (e) { $('status').innerHTML = '<span class="err">' + esc(e.message) + '</span>'; }
+    btn.textContent = 'Deposited'; toast('Deposit confirmed');
+  } catch (e) { btn.disabled = false; btn.textContent = 'Try deposit again'; toast(e.message || 'Deposit cancelled.'); }
 }
-
-$('goAsk').onclick = () => call({ text: $('ask').value });
-$('goForm').onclick = () => call({ amount: +$('amount').value, token: $('token').value, risk: $('risk').value, chains: $('chains').value });
-$('connect').onclick = connect;
 </script>
 </body>
 </html>

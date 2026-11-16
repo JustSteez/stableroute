@@ -1,6 +1,6 @@
 'use strict';
 const crypto = require('crypto');
-const { policyFor, score, check, fmt } = require('./policy');
+const { policyFor, score, check, checkMap, fmt } = require('./policy');
 const { fetchPools, normalize } = require('./data');
 const { draftDeposit } = require('./txdraft');
 
@@ -101,6 +101,7 @@ async function route(query) {
     shortlist: sl.list.map((c, i) => ({
       slot: i, project: c.project, chain: c.chain, symbol: c.symbol, apy: (c.base + c.reward) / 100,
       apyBase: c.base / 100, apyReward: c.reward / 100, tvlUsd: c.tvl, score: c.score,
+      apyMean30d: c.mean30 / 100, blueChip: !!c.blue, predictedDown: !!c.down, checks: checkMap(c, policy),
       passed: c.fails.length === 0, reasons: c.fails, picked: i === pickIdx,
     })),
     stats: { considered: sl.totalConsidered, passing: sl.totalPassing },
