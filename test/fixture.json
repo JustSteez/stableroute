@@ -1,0 +1,299 @@
+{
+ "status": "success",
+ "data": [
+  {
+   "pool": "p-aave-base",
+   "project": "aave-v3",
+   "chain": "Base",
+   "symbol": "USDC",
+   "tvlUsd": 180000000,
+   "apyBase": 4.9,
+   "apyReward": 0,
+   "apy": 4.9,
+   "apyMean30d": 4.6,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  },
+  {
+   "pool": "p-comp-base",
+   "project": "compound-v3",
+   "chain": "Base",
+   "symbol": "USDC",
+   "tvlUsd": 95000000,
+   "apyBase": 4.4,
+   "apyReward": 0.6,
+   "apy": 5,
+   "apyMean30d": 4.8,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  },
+  {
+   "pool": "p-morpho-base",
+   "project": "morpho-blue",
+   "chain": "Base",
+   "symbol": "USDC",
+   "tvlUsd": 62000000,
+   "apyBase": 5.6,
+   "apyReward": 0,
+   "apy": 5.6,
+   "apyMean30d": 5.2,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": "Steakhouse USDC",
+   "underlyingTokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  },
+  {
+   "pool": "p-moon-base",
+   "project": "moonwell",
+   "chain": "Base",
+   "symbol": "USDC",
+   "tvlUsd": 40000000,
+   "apyBase": 4.1,
+   "apyReward": 2.9,
+   "apy": 7,
+   "apyMean30d": 6.5,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  },
+  {
+   "pool": "p-farm-base",
+   "project": "yieldfarmx",
+   "chain": "Base",
+   "symbol": "USDC",
+   "tvlUsd": 3200000,
+   "apyBase": 3,
+   "apyReward": 21,
+   "apy": 24,
+   "apyMean30d": 9,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  },
+  {
+   "pool": "p-spike-base",
+   "project": "newlend",
+   "chain": "Base",
+   "symbol": "USDC",
+   "tvlUsd": 14000000,
+   "apyBase": 18,
+   "apyReward": 0,
+   "apy": 18,
+   "apyMean30d": 6.1,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  },
+  {
+   "pool": "p-fluid-base",
+   "project": "fluid-lending",
+   "chain": "Base",
+   "symbol": "USDC",
+   "tvlUsd": 70000000,
+   "apyBase": 5.1,
+   "apyReward": 0.4,
+   "apy": 5.5,
+   "apyMean30d": 5.3,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "predictions": {
+    "predictedClass": "Down"
+   }
+  },
+  {
+   "pool": "p-aave-eth",
+   "project": "aave-v3",
+   "chain": "Ethereum",
+   "symbol": "USDC",
+   "tvlUsd": 2100000000,
+   "apyBase": 4.7,
+   "apyReward": 0,
+   "apy": 4.7,
+   "apyMean30d": 4.9,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  },
+  {
+   "pool": "p-sky-eth",
+   "project": "sky-lending",
+   "chain": "Ethereum",
+   "symbol": "USDC",
+   "tvlUsd": 900000000,
+   "apyBase": 4.5,
+   "apyReward": 0,
+   "apy": 4.5,
+   "apyMean30d": 4.5,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  },
+  {
+   "pool": "p-euler-eth",
+   "project": "euler-v2",
+   "chain": "Ethereum",
+   "symbol": "USDC",
+   "tvlUsd": 120000000,
+   "apyBase": 6.2,
+   "apyReward": 0,
+   "apy": 6.2,
+   "apyMean30d": 5.9,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  },
+  {
+   "pool": "p-aave-usdt",
+   "project": "aave-v3",
+   "chain": "Ethereum",
+   "symbol": "USDT",
+   "tvlUsd": 1500000000,
+   "apyBase": 4.3,
+   "apyReward": 0,
+   "apy": 4.3,
+   "apyMean30d": 4.2,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  },
+  {
+   "pool": "p-aave-arb",
+   "project": "aave-v3",
+   "chain": "Arbitrum",
+   "symbol": "USDC",
+   "tvlUsd": 160000000,
+   "apyBase": 5,
+   "apyReward": 0,
+   "apy": 5,
+   "apyMean30d": 4.8,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  },
+  {
+   "pool": "p-tiny-arb",
+   "project": "smallvault",
+   "chain": "Arbitrum",
+   "symbol": "USDC",
+   "tvlUsd": 1400000,
+   "apyBase": 12,
+   "apyReward": 0,
+   "apy": 12,
+   "apyMean30d": 11.5,
+   "stablecoin": true,
+   "exposure": "single",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  },
+  {
+   "pool": "p-lp",
+   "project": "curve",
+   "chain": "Base",
+   "symbol": "USDC-USDT",
+   "tvlUsd": 50000000,
+   "apyBase": 3,
+   "apyReward": 0,
+   "apy": 3,
+   "apyMean30d": 3,
+   "stablecoin": true,
+   "exposure": "multi",
+   "ilRisk": "no",
+   "poolMeta": null,
+   "underlyingTokens": [
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+   ],
+   "predictions": {
+    "predictedClass": "Stable/Up"
+   }
+  }
+ ]
+}

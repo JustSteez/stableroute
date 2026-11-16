@@ -1,0 +1,22 @@
+{
+  "name": "stableroute",
+  "version": "1.0.0",
+  "description": "StableRoute: stablecoin yield router agent. Picks the best safe yield, drafts the deposit, and proves the pick followed its risk rules on zkVerify.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node test/run.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ethers": "^6.17.0",
+    "snarkjs": "0.7.6"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "circom2": "^0.2.23",
+    "circomlib": "^2.0.5"
+  }
+}

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StableRoute: stablecoin yield router with proofs</title>
+<style>
+  :root { --bg:#0b0d10; --card:#14171c; --line:#252a31; --ink:#e9edf2; --mute:#8b95a3; --ok:#3ddc97; --bad:#ff6b6b; --acc:#7c9cff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+  main { max-width:960px; margin:0 auto; padding:40px 20px 80px; }
+  h1 { font-size:30px; margin:0 0 6px; letter-spacing:-.02em; }
+  h1 span { color:var(--acc); }
+  .sub { color:var(--mute); margin:0 0 28px; max-width:680px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; margin-bottom:16px; }
+  label { font-size:12px; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; display:block; margin-bottom:6px; }
+  input, select { width:100%; background:#0f1216; color:var(--ink); border:1px solid var(--line); border-radius:9px; padding:10px 12px; font:inherit; }
+  .row { display:grid; grid-template-columns:1.2fr 1fr 1fr 1.4fr; gap:12px; margin-top:14px; }
+  @media (max-width:700px){ .row { grid-template-columns:1fr 1fr; } }
+  button { background:var(--acc); color:#0b0d10; border:0; border-radius:9px; padding:11px 18px; font:600 15px inherit; cursor:pointer; }
+  button.ghost { background:transparent; color:var(--ink); border:1px solid var(--line); }
+  button:disabled { opacity:.5; cursor:wait; }
+  .actions { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+  .pick h2 { margin:0 0 4px; font-size:22px; }
+  .big { font-size:40px; font-weight:700; letter-spacing:-.02em; }
+  .stats { display:flex; gap:28px; flex-wrap:wrap; margin:10px 0; }
+  .stats div small { display:block; color:var(--mute); font-size:12px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--mute); font-weight:500; font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+  .pass { color:var(--ok); font-weight:600; } .fail { color:var(--bad); font-weight:600; }
+  .reasons { color:var(--mute); font-size:13px; }
+  .tag { display:inline-block; font-size:11px; padding:2px 7px; border-radius:99px; background:#1d2430; color:var(--acc); margin-left:6px; }
+  code, pre { font:12px/1.5 ui-monospace,Menlo,monospace; }
+  pre { background:#0f1216; border:1px solid var(--line); border-radius:9px; padding:12px; overflow:auto; max-height:240px; }
+  .muted { color:var(--mute); } .err { color:var(--bad); }
+  .hidden { display:none; }
+  a { color:var(--acc); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Stable<span>Route</span></h1>
+  <p class="sub">Tell it how much stablecoin you want to put to work and how much risk you can take. It checks live yields across DeFi, throws out the traps (emission farms, APY spikes, thin pools), picks the best safe pool, drafts the deposit, and proves on zkVerify that the pick followed the rules.</p>
+
+  <div class="card">
+    <label for="ask">Ask in plain English</label>
+    <input id="ask" value="Put $10,000 USDC somewhere safe on Base">
+    <div class="row">
+      <div><label>Amount (USD)</label><input id="amount" type="number" value="10000" min="1"></div>
+      <div><label>Token</label><select id="token"><option>USDC</option><option>USDT</option><option>DAI</option><option>ANY</option></select></div>
+      <div><label>Risk</label><select id="risk"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+      <div><label>Chains</label><input id="chains" value="Base,Ethereum,Arbitrum"></div>
+    </div>
+    <div class="actions">
+      <button id="goAsk">Ask</button>
+      <button id="goForm" class="ghost">Route with these settings</button>
+      <button id="connect" class="ghost">Connect wallet</button>
+      <span id="status" class="muted" style="align-self:center"></span>
+    </div>
+  </div>
+
+  <div id="out" class="hidden">
+    <div class="card pick" id="pickCard"></div>
+    <div class="card">
+      <h3 style="margin-top:0">What it looked at <span class="muted" id="statsLine" style="font-weight:400;font-size:14px"></span></h3>
+      <table><thead><tr><th>Pool</th><th>APY</th><th>TVL</th><th>Result</th></tr></thead><tbody id="rows"></tbody></table>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Proof</h3>
+      <div id="proofBox"></div>
+      <details style="margin-top:10px"><summary class="muted">Snapshot the proof is bound to</summary><pre id="snap"></pre></details>
+    </div>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let wallet = null, last = null;
+const fmt = (n) => n >= 1e9 ? '$' + (n/1e9).toFixed(1) + 'B' : n >= 1e6 ? '$' + (n/1e6).toFixed(1) + 'M' : '$' + Math.round(n).toLocaleString();
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+
+async function call(body) {
+  $('status').textContent = 'Checking live yields and building proof…';
+  document.querySelectorAll('button').forEach((b) => b.disabled = true);
+  try {
+    const r = await fetch(body.text ? '/ask' : '/route', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ ...body, wallet }) });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'failed');
+    last = j; render(j); $('status').textContent = '';
+  } catch (e) { $('status').innerHTML = '<span class="err">' + esc(e.message) + '</span>'; }
+  finally { document.querySelectorAll('button').forEach((b) => b.disabled = false); }
+}
+
+function render(j) {
+  $('out').classList.remove('hidden');
+  if (j.understood) {
+    const u = j.understood.params;
+    if (u.amount) $('amount').value = u.amount; if (u.token) $('token').value = u.token; if (u.risk) $('risk').value = u.risk;
+    if (u.chains) $('chains').value = u.chains.join(',');
+  }
+  const p = j.pick;
+  let h = '';
+  if (p) {
+    h += `<label>${esc(j.policy.label)} pick</label><h2>${esc(p.project)} · ${esc(p.symbol)} on ${esc(p.chain)}${p.poolMeta ? ' <span class="tag">' + esc(p.poolMeta) + '</span>' : ''}</h2>`;
+    h += `<div class="stats"><div><span class="big">${p.apy.toFixed(2)}%</span><small>APY now</small></div>`;
+    h += `<div><b>${p.apyBase.toFixed(2)}%</b><small>organic</small></div><div><b>${p.apyReward.toFixed(2)}%</b><small>token rewards</small></div>`;
+    h += `<div><b>${p.apyMean30d.toFixed(2)}%</b><small>30-day avg</small></div><div><b>${fmt(p.tvlUsd)}</b><small>in pool</small></div>`;
+    h += `<div><b>~$${p.estYearlyUsd.toLocaleString()}</b><small>per year</small></div></div>`;
+  } else {
+    h += `<label>${esc(j.policy.label)}</label><h2>No safe route</h2>`;
+  }
+  h += `<p>${esc(j.summary)}</p>`;
+  if (p) {
+    const d = p.deposit;
+    if (d.supported && d.steps) h += `<div class="actions"><button onclick="deposit()">Deposit with my wallet (${d.steps.length} txs)</button><a href="${d.link}" target="_blank" style="align-self:center">Pool data</a></div><p class="muted" style="font-size:13px">You review and sign each transaction in your own wallet. StableRoute never holds keys.</p>`;
+    else if (d.needsWallet) h += `<p class="muted">Connect a wallet and route again to get a ready-to-sign deposit.</p>`;
+    else h += `<p class="muted">Direct deposit drafts cover Aave v3 and Compound v3. For this pool, deposit on the protocol's site: <a href="${d.link}" target="_blank">pool details</a>.</p>`;
+  }
+  $('pickCard').innerHTML = h;
+  $('statsLine').textContent = `· ${j.stats.passing} of ${j.stats.considered} pools passed. Showing the ${j.shortlist.length} in the proof.`;
+  $('rows').innerHTML = j.shortlist.map((s) => `<tr><td>${s.picked ? '★ ' : ''}${esc(s.project)} <span class="muted">${esc(s.symbol)} · ${esc(s.chain)}</span></td>
+    <td>${s.apy.toFixed(2)}%${s.apyReward ? `<div class="reasons">${s.apyReward.toFixed(2)}% rewards</div>` : ''}</td><td>${fmt(s.tvlUsd)}</td>
+    <td>${s.passed ? '<span class="pass">Passed</span>' + (s.picked ? ' · picked' : '') : '<span class="fail">Rejected</span><div class="reasons">' + s.reasons.map(esc).join('<br>') + '</div>'}</td></tr>`).join('');
+  const pr = j.proof, z = j.zkverify || {};
+  let ph = `<p>Groth16 proof ${pr.verifiedLocally ? '<span class="pass">verified</span>' : '<span class="fail">failed</span>'} (${pr.provingMs} ms). It proves the pick passed every rule above and scored highest of all pools that passed, for the snapshot hash <code>${j.snapshotHash.slice(0, 18)}…</code>.</p>`;
+  if (z.submitted) ph += `<p>Submitted to zkVerify via Kurier. Job <code>${esc(z.jobId)}</code>: <span id="zst">checking…</span></p>`;
+  else ph += `<p class="muted">zkVerify submission: ${esc(z.reason || z.error || 'off')}</p>`;
+  $('proofBox').innerHTML = ph;
+  $('snap').textContent = JSON.stringify(j.snapshot, null, 2);
+  if (z.submitted) poll(z.jobId, 0);
+}
+
+async function poll(id, n) {
+  try {
+    const s = await (await fetch('/proof-status/' + encodeURIComponent(id))).json();
+    const el = $('zst'); if (!el) return;
+    el.innerHTML = esc(s.status || 'unknown') + (s.txHash ? ` · tx <code>${esc(s.txHash)}</code>` : '');
+    if (!/finalized|aggregated|failed/i.test(s.status || '') && n < 40) setTimeout(() => poll(id, n + 1), 4000);
+  } catch { /* ignore */ }
+}
+
+async function connect() {
+  if (!window.ethereum) { $('status').textContent = 'No browser wallet found.'; return; }
+  const [a] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  wallet = a; $('connect').textContent = a.slice(0, 6) + '…' + a.slice(-4);
+}
+
+async function deposit() {
+  const d = last?.pick?.deposit; if (!d?.steps) return;
+  if (!wallet) await connect();
+  try {
+    await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x' + d.chainId.toString(16) }] });
+    for (const s of d.steps) {
+      $('status').textContent = s.label + ': confirm in your wallet…';
+      const hash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: wallet, to: s.to, data: s.data, value: s.value }] });
+      $('status').textContent = s.label + ': waiting for confirmation…';
+      for (let i = 0; i < 90; i++) {
+        const rc = await window.ethereum.request({ method: 'eth_getTransactionReceipt', params: [hash] });
+        if (rc) { if (rc.status !== '0x1') throw new Error(s.label + ' failed on-chain'); break; }
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    }
+    $('status').textContent = 'Deposit sent.';
+  } catch (e) { $('status').innerHTML = '<span class="err">' + esc(e.message) + '</span>'; }
+}
+
+$('goAsk').onclick = () => call({ text: $('ask').value });
+$('goForm').onclick = () => call({ amount: +$('amount').value, token: $('token').value, risk: $('risk').value, chains: $('chains').value });
+$('connect').onclick = connect;
+</script>
+</body>
+</html>
