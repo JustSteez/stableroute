@@ -3,278 +3,361 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>StableRoute: find a safe yield for your stablecoins</title>
+<title>StableRoute: put your stablecoins to work, safely</title>
 <meta name="description" content="StableRoute checks live stablecoin yields, rejects the traps, picks the best safe pool and proves the pick on zkVerify.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --paper: #edf1ee;
-    --surface: #fafcfb;
-    --ink: #0e2a22;
-    --mute: #5e7169;
-    --line: #c9d5ce;
-    --soft: #dfe7e2;
-    --blue: #2462c9;
-    --blue-wash: #e3ecfa;
-    --pass: #17855a;
-    --fail: #b9412c;
-    --fail-wash: #f6e4df;
-    --r-sm: 8px;
-    --r-lg: 18px;
+    --bg: #060708;
+    --bg2: #0c0e10;
+    --ink: #f2f4f5;
+    --mute: #8a9096;
+    --dim: #5b6167;
+    --line: rgba(255,255,255,.08);
+    --line2: rgba(255,255,255,.14);
+    --glass: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.015));
+    --copper: #d6935f;
+    --teal: #63cbd3;
+    --pass: #59d6a4;
+    --fail: #f08a76;
+    --radius: 22px;
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: hidden; }
   body {
-    margin: 0; background: var(--paper); color: var(--ink);
-    font: 400 16px/1.55 "Onest", ui-sans-serif, system-ui, sans-serif;
-    font-feature-settings: "tnum" 1;
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 400 15px/1.6 "Sora", ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "tnum" 1; -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
-  a { color: var(--blue); }
+  a { color: inherit; }
   button, input { font: inherit; color: inherit; }
-  :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
 
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  /* nav */
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; position: relative; z-index: 3; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; letter-spacing: -.01em; }
+  .links { display: flex; gap: 30px; font-size: 14px; color: var(--mute); }
+  .links a { text-decoration: none; } .links a:hover { color: var(--ink); }
+  @media (max-width: 760px) { .links { display: none; } }
 
-  /* top bar */
-  .bar { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -.01em; }
-  .mark { width: 28px; height: 28px; }
+  /* buttons */
+  .pill { display: inline-flex; align-items: center; gap: 10px; border-radius: 999px; padding: 11px 20px; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; white-space: nowrap;
+    border: 1px solid var(--line2); background: rgba(255,255,255,.03); color: var(--ink); transition: border-color .2s, background .2s; }
+  .pill:hover { border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.06); }
+  .pill.solid { background: linear-gradient(180deg, #5d6e72, #2c3538); border-color: rgba(255,255,255,.22); box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 8px 30px rgba(99,203,211,.12); }
+  .pill.solid:hover { background: linear-gradient(180deg, #6b7f84, #33403f); }
+  .pill .arr { width: 14px; height: 14px; }
+  .pill:disabled { opacity: .5; cursor: progress; }
 
-  /* hero + ask */
-  .hero { padding: 48px 0 28px; }
-  h1 { font-size: clamp(36px, 6vw, 64px); line-height: 1.02; letter-spacing: -.035em; font-weight: 800; margin: 0 0 14px; max-width: 13ch; }
-  .lede { color: var(--mute); max-width: 58ch; margin: 0 0 32px; font-size: 18px; }
+  /* hero */
+  .hero { position: relative; text-align: center; padding: 70px 0 0; overflow: hidden; }
+  .hero::before { content: ""; position: absolute; inset: -200px -50vw 0; background: radial-gradient(60% 50% at 50% 0%, rgba(99,203,211,.08), transparent 70%); pointer-events: none; }
+  .kicker { font-size: 12px; letter-spacing: .14em; color: var(--mute); margin: 0 0 22px; }
+  h1 { font-size: clamp(36px, 5.6vw, 64px); line-height: 1.12; font-weight: 600; letter-spacing: -.03em; margin: 0 auto 20px; max-width: 16ch; }
+  .lede { color: var(--mute); max-width: 54ch; margin: 0 auto 36px; font-size: 16px; }
 
-  .ask { display: flex; gap: 8px; background: var(--surface); border: 1.5px solid var(--ink); border-radius: 999px; padding: 6px 6px 6px 22px; max-width: 760px; }
-  .ask input { flex: 1; border: 0; background: transparent; font-size: 18px; min-width: 0; outline: none; }
-  .ask:focus-within { box-shadow: 0 0 0 4px var(--blue-wash); }
-  @media (max-width: 560px) {
-    .ask { flex-direction: column; border-radius: 22px; padding: 14px; }
-    .ask input { font-size: 17px; padding: 2px 4px 8px; }
-    .pick { padding: 24px 20px; }
-    .facts { grid-template-columns: 1fr 1fr; }
-  }
+  .ask { position: relative; z-index: 2; display: flex; gap: 8px; align-items: center; max-width: 720px; margin: 0 auto; padding: 7px 7px 7px 24px; border-radius: 999px;
+    background: rgba(14,16,18,.75); border: 1px solid var(--line2); backdrop-filter: blur(14px); box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .ask input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; font-size: 16px; }
+  .ask input::placeholder { color: var(--dim); }
+  .ask:focus-within { border-color: rgba(99,203,211,.5); }
+  @media (max-width: 560px) { .ask { flex-direction: column; border-radius: 22px; padding: 14px; align-items: stretch; } .ask .pill { justify-content: center; } }
 
-  .btn { border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 600; cursor: pointer; background: var(--ink); color: var(--paper); white-space: nowrap; }
-  .btn.blue { background: var(--blue); color: #fff; }
-  .btn.line { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
-  .btn.line:hover { border-color: var(--ink); }
-  .btn:disabled { opacity: .55; cursor: progress; }
+  .settings { position: relative; z-index: 2; display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 26px; margin: 24px auto 0; max-width: 900px; }
+  .set { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--mute); }
+  .amount { display: flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; background: rgba(255,255,255,.02); }
+  .amount input { width: 96px; background: transparent; border: 0; outline: none; color: var(--ink); font-weight: 500; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: rgba(255,255,255,.02); }
+  .seg button { border: 0; background: transparent; color: var(--mute); padding: 5px 12px; border-radius: 999px; font-size: 13px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: rgba(255,255,255,.1); color: var(--ink); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+  .tierNote { position: relative; z-index: 2; color: var(--dim); font-size: 13px; margin: 14px auto 0; }
+  .err { position: relative; z-index: 2; color: var(--fail); font-size: 14px; margin-top: 12px; min-height: 1.2em; }
 
-  /* settings */
-  .settings { display: flex; flex-wrap: wrap; gap: 28px 36px; margin-top: 26px; align-items: flex-start; }
-  .field > span { display: block; font-size: 13px; color: var(--mute); margin-bottom: 8px; font-weight: 500; }
-  .amount { display: flex; align-items: center; border-bottom: 1.5px solid var(--ink); width: 170px; }
-  .amount b { font-weight: 600; color: var(--mute); }
-  .amount input { border: 0; background: transparent; padding: 6px 4px; width: 100%; font-size: 20px; font-weight: 600; outline: none; }
-  .seg { display: inline-flex; background: var(--soft); border-radius: 999px; padding: 3px; }
-  .seg button { border: 0; background: transparent; padding: 7px 14px; border-radius: 999px; cursor: pointer; font-weight: 500; font-size: 14px; color: var(--mute); }
-  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 0 var(--line); }
-  .pills { display: flex; gap: 6px; flex-wrap: wrap; }
-  .pills button { border: 1.5px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 13px; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--mute); }
-  .pills button[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); background: var(--surface); }
-  .tierNote { font-size: 13px; color: var(--mute); margin-top: 8px; max-width: 34ch; }
+  /* the ring */
+  .ring { position: relative; height: 300px; margin-top: 10px; pointer-events: none; }
+  .ring svg { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: min(1500px, 140vw); height: auto; }
+  .ring::after { content: ""; position: absolute; inset: auto -50vw 0; height: 120px; background: linear-gradient(180deg, transparent, var(--bg)); }
+  @media (prefers-reduced-motion: no-preference) { .ring .spin { animation: drift 14s ease-in-out infinite alternate; transform-origin: 750px 520px; } }
+  @keyframes drift { from { transform: rotate(-1.5deg); } to { transform: rotate(1.5deg); } }
+
+  /* stats band */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    background: linear-gradient(90deg, rgba(255,255,255,.02), rgba(255,255,255,.05) 50%, rgba(255,255,255,.02)); position: relative; z-index: 2; }
+  .stats div { text-align: center; padding: 30px 12px; }
+  .stats b { display: block; font-size: clamp(30px, 4vw, 46px); font-weight: 500; letter-spacing: -.03em; line-height: 1.1; }
+  .stats span { font-size: 13px; color: var(--mute); }
+  @media (max-width: 700px) { .stats { grid-template-columns: 1fr 1fr; } }
+
+  /* sections */
+  section.block { padding: 90px 0 0; }
+  .label { font-size: 12px; letter-spacing: .14em; color: var(--mute); margin: 0 0 12px; }
+  h2 { font-size: clamp(26px, 3.4vw, 38px); line-height: 1.2; font-weight: 600; letter-spacing: -.025em; margin: 0 0 14px; }
+  .sub { color: var(--mute); max-width: 60ch; margin: 0 0 30px; }
+
+  .card { background: var(--glass); border: 1px solid var(--line); border-radius: var(--radius); position: relative; overflow: hidden; }
+  .card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+    background: linear-gradient(160deg, rgba(255,255,255,.18), transparent 35%, transparent 70%, rgba(99,203,211,.18));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
 
   /* result */
-  .result { margin: 44px 0 0; display: grid; grid-template-columns: 1.55fr 1fr; gap: 0; background: var(--surface); border-radius: var(--r-lg); border: 1px solid var(--line); overflow: hidden; }
-  @media (max-width: 820px) { .result { grid-template-columns: 1fr; } }
-  .pick { padding: 32px; }
-  .pick .where { font-size: 15px; color: var(--mute); margin: 0 0 4px; }
-  .pick h2 { margin: 0; font-size: 28px; letter-spacing: -.02em; }
-  .meta { color: var(--mute); font-size: 14px; }
-  .apy { display: flex; align-items: baseline; gap: 18px; margin: 22px 0 6px; flex-wrap: wrap; }
-  .apy strong { font-size: clamp(56px, 9vw, 92px); line-height: .9; letter-spacing: -.045em; font-weight: 800; }
+  #result { display: grid; grid-template-columns: 1.45fr 1fr; gap: 18px; }
+  @media (max-width: 880px) { #result { grid-template-columns: 1fr; } }
+  .pick { padding: 34px; }
+  .pick .where { color: var(--mute); font-size: 14px; margin: 0 0 6px; }
+  .pick h3 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -.02em; }
+  .pick .meta { color: var(--dim); font-size: 13px; }
+  .apy { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin: 26px 0 4px; }
+  .apy strong { font-size: clamp(60px, 9vw, 104px); line-height: .95; font-weight: 500; letter-spacing: -.05em;
+    background: linear-gradient(100deg, #fff 30%, #c9e9ec 60%, #e8b48c); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .apy em { font-style: normal; color: var(--mute); }
-  .split { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: var(--soft); max-width: 420px; margin: 14px 0 6px; }
-  .split i { display: block; }
-  .legend { font-size: 13px; color: var(--mute); display: flex; gap: 16px; flex-wrap: wrap; }
-  .legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; background: var(--c); vertical-align: 0; }
-  .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 26px 0; padding: 18px 0; border-top: 1px solid var(--soft); border-bottom: 1px solid var(--soft); }
-  .facts div { font-size: 13px; color: var(--mute); }
-  .facts b { display: block; font-size: 20px; color: var(--ink); letter-spacing: -.01em; }
-  .summary { max-width: 60ch; margin: 0 0 22px; }
-  .deposit { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-  .fine { font-size: 13px; color: var(--mute); margin: 12px 0 0; max-width: 56ch; }
+  .split { display: flex; height: 6px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,.06); max-width: 440px; margin: 18px 0 8px; }
+  .legend { display: flex; gap: 18px; font-size: 12px; color: var(--mute); flex-wrap: wrap; }
+  .legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-right: 7px; }
+  .facts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin: 28px 0; }
+  .facts div { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: rgba(255,255,255,.02); font-size: 12px; color: var(--mute); }
+  .facts b { display: block; font-size: 19px; font-weight: 500; color: var(--ink); letter-spacing: -.01em; }
+  .fine { color: var(--dim); font-size: 13px; margin: 14px 0 0; max-width: 56ch; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .none h3 { font-size: 30px; }
+  .none p { color: var(--mute); max-width: 52ch; }
+  .loading { padding: 60px 34px; color: var(--mute); }
+  .loading b { color: var(--ink); font-weight: 500; display: block; margin-bottom: 6px; }
+  .dots::after { content: ""; animation: dots 1.2s steps(4) infinite; }
+  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
 
-  .none h2 { font-size: 30px; }
+  /* proof card with glowing grid */
+  .proof { padding: 30px 28px; display: flex; flex-direction: column; }
+  .gridart { position: absolute; inset: 0; opacity: 1; pointer-events: none;
+    background-image: linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px);
+    background-size: 34px 34px; -webkit-mask: radial-gradient(70% 60% at 70% 100%, #000, transparent); mask: radial-gradient(70% 60% at 70% 100%, #000, transparent); }
+  .node { position: absolute; width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); background: radial-gradient(circle, rgba(255,255,255,.5), rgba(255,255,255,.05) 60%);
+    box-shadow: 0 0 18px rgba(99,203,211,.5); display: grid; place-items: center; font-size: 10px; color: #fff; }
+  .proof > *:not(.gridart):not(.node) { position: relative; }
+  .proof h3 { margin: 0 0 6px; font-size: 19px; font-weight: 600; }
+  .proof p { color: var(--mute); font-size: 13px; margin: 0 0 18px; }
+  .proof dl { margin: 0 0 18px; font-size: 13px; }
+  .proof dl div { display: flex; justify-content: space-between; gap: 14px; padding: 11px 0; border-top: 1px solid var(--line); }
+  .proof dt { color: var(--mute); } .proof dd { margin: 0; text-align: right; font-weight: 500; overflow-wrap: anywhere; }
+  .proof code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: #cfe7ea; }
+  .ok { color: var(--pass) !important; } .bad { color: var(--fail) !important; } .wait { color: #e9c77b !important; }
+  .proof .pill { margin-top: auto; align-self: flex-start; }
 
-  /* proof receipt */
-  .receipt { background: var(--ink); color: #d7e3dd; padding: 32px 28px; position: relative; }
-  .receipt h3 { margin: 0 0 4px; color: #fff; font-size: 18px; }
-  .receipt p { margin: 0 0 18px; font-size: 14px; color: #9fb4aa; }
-  .receipt dl { margin: 0; font-size: 14px; }
-  .receipt dl div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px dashed #2f4c42; }
-  .receipt dt { color: #9fb4aa; }
-  .receipt dd { margin: 0; text-align: right; color: #fff; font-weight: 500; overflow-wrap: anywhere; }
-  .receipt code { font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
-  .ok { color: #6fe0a8 !important; } .bad { color: #ff9b8a !important; } .wait { color: #f2d27a !important; }
-  .receipt .btn.line { border-color: #2f4c42; color: #d7e3dd; margin-top: 18px; padding: 9px 16px; font-size: 14px; }
+  /* check table */
+  .tablecard { overflow-x: auto; }
+  table { width: 100%; min-width: 860px; border-collapse: collapse; }
+  th { font-size: 12px; font-weight: 500; color: var(--mute); padding: 18px 8px 14px; text-align: center; }
+  th:first-child, td:first-child { text-align: left; padding-left: 26px; }
+  th.num, td.num { text-align: right; padding-right: 16px; }
+  td { padding: 15px 8px; border-top: 1px solid var(--line); text-align: center; vertical-align: middle; font-size: 14px; }
+  tr.picked td { background: rgba(99,203,211,.09); }
+  tr.picked td:first-child { box-shadow: inset 3px 0 0 var(--teal); }
+  tr.rejected .pname { color: var(--mute); }
+  .pname { font-weight: 500; } .pname small { display: block; font-weight: 400; color: var(--dim); font-size: 12px; }
+  .chip { display: inline-block; margin-left: 8px; font-size: 10px; letter-spacing: .04em; padding: 2px 8px; border-radius: 99px; border: 1px solid rgba(99,203,211,.35); color: var(--teal); vertical-align: 2px; }
+  .y, .n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-size: 12px; }
+  .y { color: var(--pass); background: rgba(89,214,164,.1); border: 1px solid rgba(89,214,164,.25); }
+  .n { color: var(--fail); background: rgba(240,138,118,.1); border: 1px solid rgba(240,138,118,.25); }
+  tr.why td { border-top: 0; padding: 0 26px 15px; text-align: left; font-size: 12px; color: #c98a7c; }
+  .v { font-size: 13px; font-weight: 500; } .v.p { color: var(--pass); } .v.f { color: var(--fail); } .v.k { color: var(--teal); }
 
-  /* check grid: the centrepiece */
-  .checks { margin: 56px 0 0; }
-  .checks h2 { font-size: 26px; letter-spacing: -.02em; margin: 0 0 6px; }
-  .checks > p { color: var(--mute); margin: 0 0 22px; max-width: 64ch; }
-  .gridwrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); }
-  table { border-collapse: collapse; width: 100%; min-width: 820px; }
-  th { text-align: center; font-size: 13px; font-weight: 500; color: var(--mute); padding: 16px 8px 12px; line-height: 1.25; }
-  th:first-child, td:first-child { text-align: left; padding-left: 24px; }
-  th.num, td.num { text-align: right; padding-right: 18px; }
-  td { padding: 14px 8px; border-top: 1px solid var(--soft); vertical-align: middle; text-align: center; }
-  tr.picked td { background: var(--blue-wash); }
-  tr.picked td:first-child { box-shadow: inset 4px 0 0 var(--blue); }
-  tr.rejected .poolname { color: var(--mute); }
-  .poolname { font-weight: 600; }
-  .poolname small { display: block; font-weight: 400; color: var(--mute); font-size: 13px; }
-  .badge { display: inline-block; font-size: 12px; font-weight: 600; color: var(--blue); margin-left: 6px; }
-  .mark-ok, .mark-no { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 14px; font-weight: 700; }
-  .mark-ok { background: #dcefe5; color: var(--pass); }
-  .mark-no { background: var(--fail-wash); color: var(--fail); }
-  tr.why td { border-top: 0; padding: 0 24px 14px; text-align: left; font-size: 13px; color: var(--fail); }
-  .verdict { font-weight: 600; font-size: 14px; }
-  .verdict.p { color: var(--pass); } .verdict.f { color: var(--fail); }
+  /* features */
+  .features { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; }
+  @media (max-width: 820px) { .features { grid-template-columns: 1fr; } }
+  .feat { padding: 28px; }
+  .ico { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line2); background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.18), rgba(255,255,255,.02)); margin-bottom: 20px; }
+  .feat h3 { margin: 0 0 8px; font-size: 17px; font-weight: 600; }
+  .feat p { margin: 0; color: var(--mute); font-size: 14px; }
 
-  .how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin: 72px 0 0; padding: 32px 0 0; border-top: 1.5px solid var(--ink); }
-  @media (max-width: 760px) { .how { grid-template-columns: 1fr; gap: 20px; } }
-  .how h3 { margin: 0 0 6px; font-size: 17px; }
-  .how p { margin: 0; color: var(--mute); font-size: 15px; }
+  /* risk tiers */
+  .tiers { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; }
+  @media (max-width: 820px) { .tiers { grid-template-columns: 1fr; } }
+  .tier { padding: 28px; }
+  .tier h3 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
+  .tier .for { color: var(--mute); font-size: 13px; margin: 0 0 18px; }
+  .tier ul { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .tier li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .tier li span { color: var(--mute); }
 
-  footer { margin: 72px 0 40px; color: var(--mute); font-size: 14px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  /* cta */
+  .cta { margin-top: 90px; padding: 46px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .cta h2 { margin: 0; max-width: 20ch; }
+  .cta::after { content: ""; position: absolute; right: -120px; top: -160px; width: 420px; height: 420px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(214,147,95,.22), rgba(99,203,211,.08) 45%, transparent 70%); pointer-events: none; }
 
-  .loading { padding: 48px 32px; color: var(--mute); }
-  .loading b { color: var(--ink); }
-  .err { color: var(--fail); font-size: 14px; margin-top: 14px; min-height: 1em; }
+  footer { margin: 70px 0 0; padding: 26px 0 40px; border-top: 1px solid var(--line); color: var(--dim); font-size: 13px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
   [hidden] { display: none !important; }
-  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 999px; font-size: 14px; }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .result.enter { animation: rise .45s cubic-bezier(.2,.7,.2,1); }
-    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-  }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #1a1f22; border: 1px solid var(--line2); padding: 12px 18px; border-radius: 999px; font-size: 14px; z-index: 10; }
+  @media (prefers-reduced-motion: no-preference) { .enter { animation: rise .5s cubic-bezier(.2,.7,.2,1) both; } .enter + .enter { animation-delay: .08s; } @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header class="bar">
+  <nav>
     <div class="brand">
-      <svg class="mark" viewBox="0 0 28 28" aria-hidden="true"><circle cx="5" cy="7" r="3" fill="#c9d5ce"/><circle cx="5" cy="21" r="3" fill="#c9d5ce"/><path d="M8 7c7 0 7 7 12 7M8 21c7 0 7-7 12-7" stroke="#0e2a22" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="23" cy="14" r="3.6" fill="#2462c9"/></svg>
+      <svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><defs><linearGradient id="bg1" x1="0" x2="1"><stop offset="0" stop-color="#d6935f"/><stop offset="1" stop-color="#63cbd3"/></linearGradient></defs><circle cx="5" cy="7" r="2.6" fill="#5b6167"/><circle cx="5" cy="21" r="2.6" fill="#5b6167"/><path d="M8 7c7 0 7 7 12 7M8 21c7 0 7-7 12-7" stroke="url(#bg1)" stroke-width="2.2" fill="none" stroke-linecap="round"/><circle cx="23" cy="14" r="3.4" fill="#f2f4f5"/></svg>
       StableRoute
     </div>
-    <button class="btn line" id="connect">Connect wallet</button>
-  </header>
+    <div class="links"><a href="#how">How it works</a><a href="#tiers">Risk levels</a><a href="https://github.com/JustSteez/stableroute" target="_blank" rel="noopener">GitHub</a></div>
+    <button class="pill" id="connect">Connect wallet</button>
+  </nav>
+</div>
 
-  <section class="hero">
-    <h1>Where should your stablecoins earn?</h1>
-    <p class="lede">StableRoute checks live yields across DeFi, rejects the traps (token-reward farms, APY spikes, thin pools), picks the best pool that passes, and proves on zkVerify that it followed the rules.</p>
+<header class="hero">
+  <div class="wrap">
+    <p class="kicker">STABLECOIN YIELD ROUTER</p>
+    <h1>Put your stablecoins to work, safely</h1>
+    <p class="lede">StableRoute checks live yields across DeFi, rejects the traps, picks the best pool that passes your risk level, and proves on zkVerify that it followed the rules.</p>
 
     <form class="ask" id="askForm">
-      <input id="ask" aria-label="What do you want to do?" autocomplete="off" value="Put $10,000 USDC somewhere safe on Base">
-      <button class="btn blue" id="go" type="submit">Find route</button>
+      <input id="ask" aria-label="What do you want to do?" autocomplete="off" placeholder="Put $10,000 USDC somewhere safe on Base" value="Put $10,000 USDC somewhere safe on Base">
+      <button class="pill solid" id="go" type="submit">Find route <svg class="arr" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10m0 0L9 4m4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </form>
 
-    <div class="settings" aria-label="Settings">
-      <div class="field"><span>Amount</span>
-        <label class="amount"><b>$</b><input id="amount" type="number" min="1" step="any" value="10000" aria-label="Amount in US dollars"></label>
-      </div>
-      <div class="field"><span>Token</span>
-        <div class="seg" data-name="token" role="group" aria-label="Token">
-          <button type="button" data-v="USDC" aria-pressed="true">USDC</button><button type="button" data-v="USDT" aria-pressed="false">USDT</button><button type="button" data-v="DAI" aria-pressed="false">DAI</button><button type="button" data-v="ANY" aria-pressed="false">Any</button>
-        </div>
-      </div>
-      <div class="field"><span>Risk</span>
-        <div class="seg" data-name="risk" role="group" aria-label="Risk">
-          <button type="button" data-v="low" aria-pressed="true">Low</button><button type="button" data-v="medium" aria-pressed="false">Medium</button><button type="button" data-v="high" aria-pressed="false">High</button>
-        </div>
-        <div class="tierNote" id="tierNote"></div>
-      </div>
-      <div class="field"><span>Chains</span>
-        <div class="pills" id="chains" role="group" aria-label="Chains">
-          <button type="button" data-v="Base" aria-pressed="true">Base</button><button type="button" data-v="Ethereum" aria-pressed="false">Ethereum</button><button type="button" data-v="Arbitrum" aria-pressed="false">Arbitrum</button><button type="button" data-v="Optimism" aria-pressed="false">Optimism</button><button type="button" data-v="Polygon" aria-pressed="false">Polygon</button>
-        </div>
-      </div>
+    <div class="settings">
+      <label class="set">Amount <span class="amount">$<input id="amount" type="number" min="1" step="any" value="10000" aria-label="Amount in US dollars"></span></label>
+      <div class="set">Token <div class="seg" data-name="token" role="group" aria-label="Token"><button type="button" data-v="USDC" aria-pressed="true">USDC</button><button type="button" data-v="USDT" aria-pressed="false">USDT</button><button type="button" data-v="DAI" aria-pressed="false">DAI</button><button type="button" data-v="ANY" aria-pressed="false">Any</button></div></div>
+      <div class="set">Risk <div class="seg" data-name="risk" role="group" aria-label="Risk"><button type="button" data-v="low" aria-pressed="true">Low</button><button type="button" data-v="medium" aria-pressed="false">Medium</button><button type="button" data-v="high" aria-pressed="false">High</button></div></div>
+      <div class="set">Chains <div class="seg" id="chains" role="group" aria-label="Chains"><button type="button" data-v="Base" aria-pressed="true">Base</button><button type="button" data-v="Ethereum" aria-pressed="false">Ethereum</button><button type="button" data-v="Arbitrum" aria-pressed="false">Arbitrum</button><button type="button" data-v="Optimism" aria-pressed="false">Optimism</button></div></div>
     </div>
+    <p class="tierNote" id="tierNote"></p>
     <div class="err" id="err" role="alert"></div>
+  </div>
+
+  <div class="ring" aria-hidden="true">
+    <svg viewBox="0 0 1500 560" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1b2a2e" stop-opacity="0"/><stop offset=".22" stop-color="#7fd6dc"/><stop offset=".42" stop-color="#ffffff"/><stop offset=".6" stop-color="#d6935f"/><stop offset=".8" stop-color="#5a2f1c"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+        <linearGradient id="g2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".25" stop-color="#d6935f"/><stop offset=".5" stop-color="#fff2e6"/><stop offset=".72" stop-color="#63cbd3"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+        <linearGradient id="g3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".35" stop-color="#3d6b72"/><stop offset=".55" stop-color="#cfeff2"/><stop offset=".75" stop-color="#8a5638"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+        <filter id="glow" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="9"/></filter>
+        <filter id="soft"><feGaussianBlur stdDeviation="1.2"/></filter>
+        <radialGradient id="core" cx=".5" cy="1" r=".6"><stop offset="0" stop-color="#63cbd3" stop-opacity=".18"/><stop offset="1" stop-color="#63cbd3" stop-opacity="0"/></radialGradient>
+      </defs>
+      <ellipse cx="750" cy="560" rx="700" ry="360" fill="url(#core)"/>
+      <g class="spin">
+        <g filter="url(#glow)" opacity=".75">
+          <ellipse cx="750" cy="520" rx="470" ry="250" fill="none" stroke="url(#g1)" stroke-width="22" transform="rotate(-6 750 520)"/>
+          <ellipse cx="760" cy="540" rx="400" ry="230" fill="none" stroke="url(#g2)" stroke-width="18" transform="rotate(8 750 520)"/>
+        </g>
+        <g filter="url(#soft)">
+          <ellipse cx="750" cy="520" rx="470" ry="250" fill="none" stroke="url(#g1)" stroke-width="10" transform="rotate(-6 750 520)"/>
+          <ellipse cx="760" cy="540" rx="400" ry="230" fill="none" stroke="url(#g2)" stroke-width="7" transform="rotate(8 750 520)"/>
+          <ellipse cx="740" cy="560" rx="540" ry="300" fill="none" stroke="url(#g3)" stroke-width="5" transform="rotate(-2 750 520)"/>
+          <ellipse cx="770" cy="520" rx="330" ry="200" fill="none" stroke="url(#g3)" stroke-width="3" transform="rotate(14 750 520)"/>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="stats">
+    <div><b>6</b><span>Risk checks on every pool</span></div>
+    <div><b>4</b><span>Chains covered</span></div>
+    <div><b>1</b><span>Proof per decision</span></div>
+    <div><b>0</b><span>Keys or funds held</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="block" id="resultBlock" hidden>
+    <p class="label">YOUR ROUTE</p>
+    <div id="result"></div>
   </section>
 
-  <section id="resultBox" aria-live="polite"></section>
-
-  <section class="checks" id="checksBox" hidden>
+  <section class="block" id="checksBlock" hidden>
+    <p class="label">WHAT IT CHECKED</p>
     <h2>Every pool it looked at</h2>
-    <p id="checksLede"></p>
-    <div class="gridwrap"><table>
-      <thead><tr>
-        <th scope="col">Pool</th><th scope="col" class="num">APY</th><th scope="col" class="num">In pool</th>
-        <th scope="col">Pool size</th><th scope="col">Your share</th><th scope="col">Organic yield</th><th scope="col">Steady APY</th><th scope="col">Blue-chip</th><th scope="col">Outlook</th><th scope="col">Result</th>
-      </tr></thead>
+    <p class="sub" id="checksLede"></p>
+    <div class="card tablecard"><table>
+      <thead><tr><th scope="col">Pool</th><th scope="col" class="num">APY</th><th scope="col" class="num">In pool</th><th scope="col">Pool size</th><th scope="col">Your share</th><th scope="col">Organic yield</th><th scope="col">Steady APY</th><th scope="col">Blue-chip</th><th scope="col">Outlook</th><th scope="col">Result</th></tr></thead>
       <tbody id="rows"></tbody>
     </table></div>
   </section>
 
-  <section class="how">
-    <div><h3>Live data, six checks</h3><p>Yields come from DeFiLlama. Each pool is checked for size, your share of it, how much yield is real versus token rewards, sudden spikes, protocol track record and outlook.</p></div>
-    <div><h3>You sign, it never holds funds</h3><p>For Aave and Compound picks it drafts the exact deposit: approve only the amount, then supply. You review and sign both in your own wallet.</p></div>
-    <div><h3>A pick you can check</h3><p>Each answer comes with a Groth16 proof, verified on zkVerify, that the pick passed every check and beat every other pool that passed. A wrong pick can't be proven.</p></div>
+  <section class="block" id="how">
+    <p class="label">HOW IT WORKS</p>
+    <h2>Higher yield isn't always better yield</h2>
+    <p class="sub">The top of any yield dashboard is usually token-reward farms, rates that spiked last week, and pools too small to exit. StableRoute filters them out before it picks.</p>
+    <div class="features">
+      <div class="card feat"><div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f2f4f5" stroke-width="1.6" stroke-linecap="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div><h3>Live yields, six checks</h3><p>Pulls every stablecoin pool from DeFiLlama, then checks pool size, your share of it, real versus token-reward yield, sudden spikes, track record and outlook.</p></div>
+      <div class="card feat"><div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f2f4f5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><h3>You sign, it never holds funds</h3><p>For Aave and Compound picks it drafts the deposit: approve exactly your amount, then supply. You review and sign both in your own wallet.</p></div>
+      <div class="card feat"><div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f2f4f5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div><h3>A pick you can check</h3><p>Every answer comes with a Groth16 proof, verified on zkVerify, that the pick passed every check and beat every other pool that passed.</p></div>
+    </div>
   </section>
 
-  <footer><span>StableRoute · zkVerify Agent Games 2026, Wildcard</span><span>Not financial advice. Yields change and smart contracts carry risk.</span></footer>
-</div>
+  <section class="block" id="tiers">
+    <p class="label">RISK LEVELS</p>
+    <h2>Pick how careful it should be</h2>
+    <p class="sub">The same rules run in the code and in the proof, so the numbers below are exactly what gets checked.</p>
+    <div class="tiers">
+      <div class="card tier"><h3>Low</h3><p class="for">For savings you can't afford to lose</p><ul><li><span>Pool size</span>$50M+</li><li><span>Your share of pool</span>Up to 1%</li><li><span>Organic yield</span>90%+</li><li><span>APY vs 30-day average</span>Up to 1.5x</li><li><span>Protocols</span>Blue-chip only</li></ul></div>
+      <div class="card tier"><h3>Medium</h3><p class="for">For a balance of yield and safety</p><ul><li><span>Pool size</span>$10M+</li><li><span>Your share of pool</span>Up to 2%</li><li><span>Organic yield</span>70%+</li><li><span>APY vs 30-day average</span>Up to 2x</li><li><span>Protocols</span>Any</li></ul></div>
+      <div class="card tier"><h3>High</h3><p class="for">For money you're willing to put at risk</p><ul><li><span>Pool size</span>$1M+</li><li><span>Your share of pool</span>Up to 5%</li><li><span>Organic yield</span>30%+</li><li><span>APY vs 30-day average</span>Up to 2.5x</li><li><span>Protocols</span>Any, falling APY allowed</li></ul></div>
+    </div>
+  </section>
+
+  <div class="card cta">
+    <h2>Stop guessing where your stablecoins should sit</h2>
+    <a class="pill solid" href="#">Find my route <svg class="arr" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10m0 0L9 4m4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+  </div>
+
+  <footer><span>StableRoute · Built for zkVerify Agent Games 2026</span><span>Not financial advice. Yields change and smart contracts carry risk.</span></footer>
+</main>
 
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
 const usd = (n) => n >= 1e9 ? '$' + (n/1e9).toFixed(1) + 'B' : n >= 1e6 ? '$' + (n/1e6).toFixed(1) + 'M' : n >= 1e3 ? '$' + (n/1e3).toFixed(0) + 'K' : '$' + Math.round(n);
 const money = (n) => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
+const ARROW = '<svg class="arr" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10m0 0L9 4m4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const NOTES = {
-  low: 'Pools over $50M, blue-chip protocols only, at least 90% organic yield, no recent spike.',
-  medium: 'Pools over $10M, at least 70% organic yield, APY under 2x its monthly average.',
-  high: 'Pools over $1M, token rewards allowed, APY under 2.5x its monthly average.',
+  low: 'Low risk: pools over $50M, blue-chip protocols only, at least 90% organic yield, no recent spike.',
+  medium: 'Medium risk: pools over $10M, at least 70% organic yield, APY under 2x its monthly average.',
+  high: 'High risk: pools over $1M, token rewards allowed, APY under 2.5x its monthly average.',
 };
 const PROJECT = { 'aave-v3':'Aave v3', 'compound-v3':'Compound v3', 'morpho-blue':'Morpho', 'morpho-v1':'Morpho', 'sparklend':'Spark', 'spark-savings':'Spark Savings', 'sky-lending':'Sky', 'fluid-lending':'Fluid', 'euler-v2':'Euler v2', 'maple':'Maple' };
 const pname = (p) => PROJECT[p] || p.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
-let wallet = null, last = null;
+let wallet = null, last = null, touched = false;
 
-// segmented controls
-function segValue(name) { return document.querySelector(`.seg[data-name="${name}"] [aria-pressed="true"]`).dataset.v; }
+const segValue = (name) => document.querySelector(`.seg[data-name="${name}"] [aria-pressed="true"]`).dataset.v;
 function setSeg(name, v) { document.querySelectorAll(`.seg[data-name="${name}"] button`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v))); if (name === 'risk') $('tierNote').textContent = NOTES[v]; }
-document.querySelectorAll('.seg').forEach((s) => s.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setSeg(s.dataset.name, b.dataset.v); }));
+document.querySelectorAll('.seg[data-name]').forEach((s) => s.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { setSeg(s.dataset.name, b.dataset.v); touched = true; } }));
 $('chains').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
   const on = b.getAttribute('aria-pressed') === 'true';
   if (on && $('chains').querySelectorAll('[aria-pressed="true"]').length === 1) return;
-  b.setAttribute('aria-pressed', String(!on));
+  b.setAttribute('aria-pressed', String(!on)); touched = true;
 });
 const chains = () => [...$('chains').querySelectorAll('[aria-pressed="true"]')].map((b) => b.dataset.v);
 function setChains(list) { const l = list.map((c) => c.toLowerCase()); $('chains').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(l.includes(b.dataset.v.toLowerCase())))); }
 setSeg('risk', 'low');
-
-// settings changed by hand => route with settings; otherwise read the sentence
-let settingsTouched = false;
-document.querySelector('.settings').addEventListener('click', () => settingsTouched = true);
-$('amount').addEventListener('input', () => settingsTouched = true);
-$('ask').addEventListener('input', () => settingsTouched = false);
+$('amount').addEventListener('input', () => touched = true);
+$('ask').addEventListener('input', () => touched = false);
+document.querySelector('.cta .pill').addEventListener('click', (e) => { e.preventDefault(); window.scrollTo({ top: 0 }); $('ask').focus(); });
 
 $('askForm').addEventListener('submit', (e) => {
   e.preventDefault();
-  const body = settingsTouched
-    ? { amount: +$('amount').value, token: segValue('token'), risk: segValue('risk'), chains: chains() }
-    : { text: $('ask').value };
-  run(body);
+  run(touched ? { amount: +$('amount').value, token: segValue('token'), risk: segValue('risk'), chains: chains() } : { text: $('ask').value });
 });
 
 async function run(body) {
   $('err').textContent = '';
-  $('go').disabled = true; $('go').textContent = 'Checking…';
-  $('resultBox').innerHTML = '<div class="result"><div class="loading"><b>Checking live yields</b><br>Scoring every pool against your risk level and building the proof.</div><div class="receipt"></div></div>';
+  $('go').disabled = true; $('go').innerHTML = 'Checking' + ARROW;
+  $('resultBlock').hidden = false;
+  $('result').innerHTML = '<div class="card loading"><b>Checking live yields<span class="dots"></span></b>Scoring every pool against your risk level and building the proof.</div>';
+  $('resultBlock').scrollIntoView({ behavior: 'smooth', block: 'start' });
   try {
     const r = await fetch(body.text ? '/ask' : '/route', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...body, wallet }) });
     const j = await r.json();
     if (!j.ok) throw new Error(j.error || 'Something went wrong. Try again.');
-    last = j; render(j); settingsTouched = false;
+    last = j; render(j); touched = false;
   } catch (e) {
-    $('resultBox').innerHTML = '';
-    $('err').textContent = e.message;
-  } finally { $('go').disabled = false; $('go').textContent = 'Find route'; }
+    $('resultBlock').hidden = true; $('err').textContent = e.message;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } finally { $('go').disabled = false; $('go').innerHTML = 'Find route' + ARROW; }
 }
 
 function render(j) {
@@ -288,29 +371,30 @@ function render(j) {
   const p = j.pick, amt = j.policy.amount;
   let left;
   if (p) {
-    const tot = p.apyBase + p.apyReward || 1;
-    const d = p.deposit;
+    const tot = p.apyBase + p.apyReward || 1, d = p.deposit;
     let dep;
-    if (d.supported && d.steps) dep = `<div class="deposit"><button class="btn blue" id="depositBtn">Deposit ${money(amt)} ${esc(p.symbol)}</button><a href="${esc(d.link)}" target="_blank" rel="noopener">Pool details</a></div><p class="fine">Two transactions: approve exactly ${money(amt)} ${esc(p.symbol)}, then supply it to ${esc(pname(p.project))}. You sign both in your wallet.</p>`;
-    else if (d.needsWallet) dep = `<div class="deposit"><button class="btn blue" id="connectAgain">Connect wallet to deposit</button></div><p class="fine">${esc(pname(p.project))} needs your address to credit the deposit.</p>`;
-    else dep = `<div class="deposit"><a class="btn blue" style="text-decoration:none" href="${esc(d.link)}" target="_blank" rel="noopener">Open pool</a></div><p class="fine">One-click deposits cover Aave v3 and Compound v3. Deposit in this pool from ${esc(pname(p.project))}'s own app.</p>`;
-    left = `<div class="pick">
+    if (d.supported && d.steps) dep = `<div class="row"><button class="pill solid" id="depositBtn">Deposit ${money(amt)} ${esc(p.symbol)} ${ARROW}</button><a class="pill" href="${esc(d.link)}" target="_blank" rel="noopener">Pool details</a></div><p class="fine">Two transactions: approve exactly ${money(amt)} ${esc(p.symbol)}, then supply it to ${esc(pname(p.project))}. You sign both in your wallet.</p>`;
+    else if (d.needsWallet) dep = `<div class="row"><button class="pill solid" id="connectAgain">Connect wallet to deposit ${ARROW}</button></div><p class="fine">${esc(pname(p.project))} needs your address to credit the deposit.</p>`;
+    else dep = `<div class="row"><a class="pill solid" href="${esc(d.link)}" target="_blank" rel="noopener">Open pool ${ARROW}</a></div><p class="fine">One-click deposits cover Aave v3 and Compound v3. Deposit in this pool from ${esc(pname(p.project))}'s own app.</p>`;
+    left = `<div class="card pick enter">
       <p class="where">${esc(j.policy.label)} route for ${money(amt)}</p>
-      <h2>${esc(pname(p.project))} ${esc(p.symbol)} on ${esc(p.chain)}</h2>
+      <h3>${esc(pname(p.project))} ${esc(p.symbol)} on ${esc(p.chain)}</h3>
       ${p.poolMeta ? `<div class="meta">${esc(p.poolMeta)}</div>` : ''}
-      <div class="apy"><strong>${p.apy.toFixed(2)}%</strong><em>APY, about ${money(p.estYearlyUsd)} a year</em></div>
-      <div class="split" role="img" aria-label="${p.apyBase.toFixed(2)}% organic, ${p.apyReward.toFixed(2)}% token rewards"><i style="width:${p.apyBase / tot * 100}%;background:var(--pass)"></i><i style="width:${p.apyReward / tot * 100}%;background:#e0a63a"></i></div>
-      <div class="legend"><span style="--c:var(--pass)">${p.apyBase.toFixed(2)}% organic</span><span style="--c:#e0a63a">${p.apyReward.toFixed(2)}% token rewards</span></div>
-      <div class="facts"><div><b>${usd(p.tvlUsd)}</b>in the pool</div><div><b>${p.apyMean30d.toFixed(2)}%</b>30-day average</div><div><b>${j.stats.passing} of ${j.stats.considered}</b>pools passed</div></div>
+      <div class="apy"><strong>${p.apy.toFixed(2)}%</strong><em>APY · about ${money(p.estYearlyUsd)} a year</em></div>
+      <div class="split" role="img" aria-label="${p.apyBase.toFixed(2)}% organic, ${p.apyReward.toFixed(2)}% token rewards"><i style="width:${p.apyBase / tot * 100}%;background:linear-gradient(90deg,#63cbd3,#9fe3e8)"></i><i style="width:${p.apyReward / tot * 100}%;background:var(--copper)"></i></div>
+      <div class="legend"><span style="--c:var(--teal)">${p.apyBase.toFixed(2)}% organic</span><span style="--c:var(--copper)">${p.apyReward.toFixed(2)}% token rewards</span></div>
+      <div class="facts"><div><b>${usd(p.tvlUsd)}</b>In the pool</div><div><b>${p.apyMean30d.toFixed(2)}%</b>30-day average</div><div><b>${j.stats.passing} of ${j.stats.considered}</b>Pools passed</div></div>
       ${dep}
     </div>`;
   } else {
-    left = `<div class="pick none"><p class="where">${esc(j.policy.label)} route for ${money(amt)}</p><h2>No pool is safe enough</h2><p class="summary">${esc(j.summary)}</p>
-      <div class="deposit">${j.policy.risk !== 'high' ? `<button class="btn line" id="loosen">Try ${j.policy.risk === 'low' ? 'medium' : 'high'} risk</button>` : ''}</div></div>`;
+    left = `<div class="card pick none enter"><p class="where">${esc(j.policy.label)} route for ${money(amt)}</p><h3>No pool is safe enough</h3><p>${esc(j.summary)}</p>
+      ${j.policy.risk !== 'high' ? `<button class="pill solid" id="loosen">Try ${j.policy.risk === 'low' ? 'medium' : 'high'} risk ${ARROW}</button>` : ''}</div>`;
   }
   const pr = j.proof || {}, z = j.zkverify || {};
-  const zk = z.submitted ? `<span class="wait" id="zst">Submitted</span>` : `<span class="bad">${esc(z.error ? 'Submission failed' : 'Not sent')}</span>`;
-  const right = `<aside class="receipt">
+  const zk = z.submitted ? '<span class="wait" id="zst">Submitted</span>' : `<span class="bad">${z.error ? 'Submission failed' : 'Not sent'}</span>`;
+  const right = `<aside class="card proof enter">
+    <div class="gridart"></div>
+    <span class="node" style="right:18%;bottom:12%">✓</span><span class="node" style="right:42%;bottom:4%;opacity:.6"></span><span class="node" style="right:6%;bottom:30%;opacity:.5"></span>
     <h3>Proof of route</h3>
     <p>Proves the ${p ? 'pick passed all six checks and scored highest of every pool that passed' : 'no pool passed all six checks'}, for this exact data.</p>
     <dl>
@@ -320,27 +404,25 @@ function render(j) {
       <div><dt>zkVerify</dt><dd>${zk}</dd></div>
       ${z.jobId ? `<div><dt>Job</dt><dd><code>${esc(z.jobId.slice(0, 8))}…</code></dd></div>` : ''}
     </dl>
-    <button class="btn line" id="copyProof">Copy proof JSON</button>
+    <button class="pill" id="copyProof">Copy proof JSON</button>
   </aside>`;
-  $('resultBox').innerHTML = `<div class="result enter">${left}${right}</div>`;
+  $('result').innerHTML = left + right;
 
-  // grid
   const order = ['size', 'share', 'organic', 'steady', 'bluechip', 'outlook'];
-  $('checksLede').textContent = `${j.stats.considered} ${j.stats.considered === 1 ? 'pool matched' : 'pools matched'} your token and chains; ${j.stats.passing} passed. These ${j.shortlist.length} are the ones in the proof: the best that passed, and the highest yields it turned down.`;
+  $('checksLede').textContent = `${j.stats.considered} ${j.stats.considered === 1 ? 'pool matched' : 'pools matched'} your token and chains, and ${j.stats.passing} passed. These ${j.shortlist.length} are the ones in the proof: the best that passed, plus the highest yields it turned down.`;
   $('rows').innerHTML = j.shortlist.map((s) => {
-    const cells = order.map((k) => s.checks[k] ? '<td><span class="mark-ok" aria-label="passed">✓</span></td>' : '<td><span class="mark-no" aria-label="failed">✕</span></td>').join('');
+    const cells = order.map((k) => s.checks[k] ? '<td><span class="y" aria-label="passed">✓</span></td>' : '<td><span class="n" aria-label="failed">✕</span></td>').join('');
     const cls = s.picked ? 'picked' : s.passed ? '' : 'rejected';
-    const verdict = s.picked ? '<span class="verdict" style="color:var(--blue)">Picked</span>' : s.passed ? '<span class="verdict p">Passed</span>' : '<span class="verdict f">Rejected</span>';
-    const row = `<tr class="${cls}"><td><div class="poolname">${esc(pname(s.project))}${s.blueChip ? '<span class="badge">Blue-chip</span>' : ''}<small>${esc(s.symbol)} on ${esc(s.chain)}</small></div></td>
-      <td class="num"><b>${s.apy.toFixed(2)}%</b></td><td class="num">${usd(s.tvlUsd)}</td>${cells}<td>${verdict}</td></tr>`;
-    return row + (s.passed ? '' : `<tr class="why"><td colspan="10">${s.reasons.map(esc).join(' · ')}</td></tr>`);
+    const v = s.picked ? '<span class="v k">Picked</span>' : s.passed ? '<span class="v p">Passed</span>' : '<span class="v f">Rejected</span>';
+    return `<tr class="${cls}"><td><div class="pname">${esc(pname(s.project))}${s.blueChip ? '<span class="chip">Blue-chip</span>' : ''}<small>${esc(s.symbol)} on ${esc(s.chain)}</small></div></td><td class="num"><b>${s.apy.toFixed(2)}%</b></td><td class="num">${usd(s.tvlUsd)}</td>${cells}<td>${v}</td></tr>`
+      + (s.passed ? '' : `<tr class="why"><td colspan="10">${s.reasons.map(esc).join(' · ')}</td></tr>`);
   }).join('');
-  $('checksBox').hidden = false;
+  $('checksBlock').hidden = false;
 
   const dB = $('depositBtn'); if (dB) dB.onclick = deposit;
-  const cA = $('connectAgain'); if (cA) cA.onclick = async () => { await connect(); if (wallet) run({ amount: amt, token: j.policy && segValue('token'), risk: j.policy.risk, chains: chains() }); };
+  const cA = $('connectAgain'); if (cA) cA.onclick = async () => { await connect(); if (wallet) run({ amount: amt, token: segValue('token'), risk: j.policy.risk, chains: chains() }); };
   const lo = $('loosen'); if (lo) lo.onclick = () => { setSeg('risk', j.policy.risk === 'low' ? 'medium' : 'high'); run({ amount: amt, token: segValue('token'), risk: segValue('risk'), chains: chains() }); };
-  $('copyProof').onclick = async () => { await navigator.clipboard.writeText(JSON.stringify({ proof: pr.proof, publicSignals: pr.publicSignals, snapshot: j.snapshot }, null, 2)); toast('Proof copied'); };
+  $('copyProof').onclick = async () => { try { await navigator.clipboard.writeText(JSON.stringify({ proof: pr.proof, publicSignals: pr.publicSignals, snapshot: j.snapshot }, null, 2)); toast('Proof copied'); } catch { toast('Copy blocked by the browser'); } };
   if (z.submitted) poll(z.jobId, 0);
 }
 
@@ -359,10 +441,8 @@ function toast(msg) { const t = document.createElement('div'); t.className = 'to
 
 async function connect() {
   if (!window.ethereum) { toast('Install a browser wallet like MetaMask or Rabby to deposit.'); return; }
-  try {
-    const [a] = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    wallet = a; $('connect').textContent = a.slice(0, 6) + '…' + a.slice(-4);
-  } catch { toast('Wallet connection cancelled.'); }
+  try { const [a] = await window.ethereum.request({ method: 'eth_requestAccounts' }); wallet = a; $('connect').textContent = a.slice(0, 6) + '…' + a.slice(-4); }
+  catch { toast('Wallet connection cancelled.'); }
 }
 $('connect').onclick = connect;
 
