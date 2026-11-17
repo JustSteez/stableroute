@@ -1,13 +1,13 @@
 # Agent Games: Wildcard submission (StableRoute)
 
-Copy-paste answers for the submission form. Replace `<domain>` with the Railway domain.
+Copy-paste answers for the submission form. 
 
 ## Agent link
 https://github.com/JustSteez/stableroute
 
 ## Public endpoint
-https://<domain>/agent
-(Demo site: https://<domain>/ · Health: https://<domain>/health · Open API: POST https://<domain>/route)
+https://stableroute-phi.vercel.app/agent
+(Demo site: https://stableroute-phi.vercel.app/ · Health: https://stableroute-phi.vercel.app/health · Open API: POST https://stableroute-phi.vercel.app/route)
 
 ## Use case
 People hold stablecoins as savings, but finding a safe yield is hard. Yield dashboards rank thousands of pools by APY, and the top of the list is usually the worst place to be: farms paying most of their APY in a token that's dumping, rates that spiked last week and won't last, and pools so small your deposit moves the rate. Most people either chase the headline number and get burned, or leave their USDC idle.
@@ -32,7 +32,7 @@ Claim: "Given these 8 candidate pools and this risk policy, the picked pool pass
 
 - Circom circuit `circuits/route_decision.circom` (~4k constraints), Groth16 on bn128. The pool figures, the policy thresholds and the decision are all public signals, so anyone can read them from the proof and re-check.
 - Bound to `snapshotHash`, the SHA-256 of the exact candidate data and policy, returned with every answer.
-- Every proof is verified locally, then submitted to zkVerify through Kurier. The UI shows the job status live.
+- Every proof is verified locally, then submitted to zkVerify mainnet through Kurier. The UI shows the job status live.
 - Tests show a lying decision can't be proven: picking the emission farm fails, and so does picking a pool that passes but isn't the best.
 - Limits, stated plainly: the proof trusts DeFiLlama's numbers (zkTLS on the API response is the next step); the 8-pool shortlist is cut off-circuit but reproducibly; the trusted setup is a single-contributor demo ceremony.
 

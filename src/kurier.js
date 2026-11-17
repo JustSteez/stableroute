@@ -2,7 +2,7 @@
 // Submits proofs to zkVerify through Kurier (https://kurier.xyz). Optional: only runs when KURIER_API_KEY is set.
 const { VK } = require('./prover');
 
-const BASE = () => process.env.KURIER_API_URL || 'https://api-testnet.kurier.xyz/api/v1';
+const BASE = () => process.env.KURIER_API_URL || 'https://api.kurier.xyz/api/v1';
 const OPTS = { library: 'snarkjs', curve: 'bn128' };
 let vkHash = process.env.KURIER_VK_HASH || null;
 
