@@ -122,6 +122,9 @@ const server = http.createServer(async (req, res) => {
       const { proof, publicSignals } = JSON.parse((await readBody(req)).toString('utf8'));
       return send(res, 200, { valid: await verify(publicSignals, proof) });
     }
+    if (req.method === 'GET' && (p === '/agent' || p === '/api/agent')) {
+      return send(res, 200, { ok: true, agent: 'StableRoute', protocolVersion: 'v1', hmac: !!SECRET, note: 'Agent Games endpoint. Send HMAC-signed POST requests here.' });
+    }
     if (req.method === 'POST' && (p === '/agent' || p === '/api/agent')) {
       return handleAgent(req, res, await readBody(req));
     }
