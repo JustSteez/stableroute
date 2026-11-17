@@ -60,11 +60,14 @@ async function run(params, { withProof = true } = {}) {
 }
 
 async function handleAgent(req, res, raw) {
-  if (!SECRET) return send(res, 503, { ok: false, error: 'AGENT_GAMES_HMAC_SECRET not configured' });
-  const sig = String(req.headers['x-agent-games-signature'] || '').replace(/^sha256=/, '');
-  const want = crypto.createHmac('sha256', SECRET).update(raw).digest('hex');
-  if (sig.length !== want.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want))) {
-    return send(res, 401, { ok: false, error: 'bad signature' });
+  // With AGENT_GAMES_HMAC_SECRET set, every request must be signed. Without it (Wildcard is
+  // reviewed by people, not the automated task runner) the endpoint is public and unsigned.
+  if (SECRET) {
+    const sig = String(req.headers['x-agent-games-signature'] || '').replace(/^sha256=/, '');
+    const want = crypto.createHmac('sha256', SECRET).update(raw).digest('hex');
+    if (sig.length !== want.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want))) {
+      return send(res, 401, { ok: false, error: 'bad signature' });
+    }
   }
   let task = {};
   try { task = JSON.parse(raw.toString('utf8') || '{}'); } catch { return send(res, 400, { ok: false, error: 'invalid JSON' }, true); }
@@ -123,7 +126,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { valid: await verify(publicSignals, proof) });
     }
     if (req.method === 'GET' && (p === '/agent' || p === '/api/agent')) {
-      return send(res, 200, { ok: true, agent: 'StableRoute', protocolVersion: 'v1', hmac: !!SECRET, note: 'Agent Games endpoint. Send HMAC-signed POST requests here.' });
+      return send(res, 200, { ok: true, agent: 'StableRoute', protocolVersion: 'v1', hmac: !!SECRET, note: SECRET ? 'Agent Games endpoint. Send HMAC-signed POST requests here.' : 'POST JSON here, e.g. {"text":"put $10k USDC somewhere safe on Base"} or {"amount":10000,"risk":"low","chains":["Base"]}.' });
     }
     if (req.method === 'POST' && (p === '/agent' || p === '/api/agent')) {
       return handleAgent(req, res, await readBody(req));

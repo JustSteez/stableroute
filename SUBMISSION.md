@@ -7,6 +7,7 @@ https://github.com/JustSteez/stableroute
 
 ## Public endpoint
 https://www.stableroute.xyz/agent
+Try it: `curl -X POST https://www.stableroute.xyz/agent -H 'content-type: application/json' -d '{"text":"put $10k USDC somewhere safe on Base"}'`
 (Demo site: https://www.stableroute.xyz/ · Health: https://www.stableroute.xyz/health · Open API: POST https://www.stableroute.xyz/route)
 
 ## Use case

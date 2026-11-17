@@ -102,7 +102,7 @@ curl https://<host>/proof-status/<kurierJobId>
 
 ### Agent Games endpoint
 
-`POST /agent` follows the platform protocol: it verifies `x-agent-games-signature` (HMAC-SHA256, hex, over the raw body) before parsing anything, answers preflight with `{ "ok": true, "protocolVersion": "v1" }`, routes task input (`{ amount, risk, token, chains }` or `{ text }`), and signs every response the same way. Unsigned requests get 401.
+`POST /agent` is public when `AGENT_GAMES_HMAC_SECRET` is unset (Wildcard is reviewed by people). When the secret is set it follows the platform protocol: it verifies `x-agent-games-signature` (HMAC-SHA256, hex, over the raw body) before parsing anything, answers preflight with `{ "ok": true, "protocolVersion": "v1" }`, routes task input (`{ amount, risk, token, chains }` or `{ text }`), and signs every response the same way. Unsigned requests get 401.
 
 ## Run it
 
