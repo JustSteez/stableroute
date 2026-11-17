@@ -432,7 +432,7 @@ async function poll(id, n) {
     const s = await (await fetch('/proof-status/' + encodeURIComponent(id))).json();
     const el = $('zst'); if (!el) return;
     const st = s.status || 'Pending';
-    el.textContent = st;
+    el.innerHTML = s.txExplorerUrl ? `${esc(st)} · <a href="${esc(s.txExplorerUrl)}" target="_blank" rel="noopener">view</a>` : esc(st);
     el.className = /finalized|aggregated/i.test(st) ? 'ok' : /fail/i.test(st) ? 'bad' : 'wait';
     if (!/finalized|aggregated|fail/i.test(st) && n < 40) setTimeout(() => poll(id, n + 1), 4000);
   } catch { /* keep last status */ }

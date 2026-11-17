@@ -36,4 +36,7 @@ Claim: "Given these 8 candidate pools and this risk policy, the picked pool pass
 - Tests show a lying decision can't be proven: picking the emission farm fails, and so does picking a pool that passes but isn't the best.
 - Limits, stated plainly: the proof trusts DeFiLlama's numbers (zkTLS on the API response is the next step); the 8-pool shortlist is cut off-circuit but reproducibly; the trusted setup is a single-contributor demo ceremony.
 
-Proof reference: <paste a Kurier job ID / zkVerify tx hash from a live run>
+Proof reference (zkVerify mainnet, Finalized):
+- Tx: https://zkverify.subscan.io/extrinsic/0x869705c5372e033248016194b88bdc526e7596fdcd69256e9945e88ff7634b9d
+- Kurier job: d5e87138-e270-11f1-838e-1e6a0d14f999
+- Registered vk hash: 0xd23f1383d13eea2a509eb1ca3e1a567a036d51b87427af9d6998e44b108677fe
