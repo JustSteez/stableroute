@@ -6,8 +6,8 @@ Copy-paste answers for the submission form.
 https://github.com/JustSteez/stableroute
 
 ## Public endpoint
-https://stableroute-phi.vercel.app/agent
-(Demo site: https://stableroute-phi.vercel.app/ · Health: https://stableroute-phi.vercel.app/health · Open API: POST https://stableroute-phi.vercel.app/route)
+https://www.stableroute.xyz/agent
+(Demo site: https://www.stableroute.xyz/ · Health: https://www.stableroute.xyz/health · Open API: POST https://www.stableroute.xyz/route)
 
 ## Use case
 People hold stablecoins as savings, but finding a safe yield is hard. Yield dashboards rank thousands of pools by APY, and the top of the list is usually the worst place to be: farms paying most of their APY in a token that's dumping, rates that spiked last week and won't last, and pools so small your deposit moves the rate. Most people either chase the headline number and get burned, or leave their USDC idle.
