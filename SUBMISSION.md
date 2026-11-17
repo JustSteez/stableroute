@@ -30,8 +30,8 @@ Key decisions: never custody funds; fail closed; keep the LLM out of the decisio
 ## zkVerify (checkable claim)
 Claim: "Given these 8 candidate pools and this risk policy, the picked pool passes all six checks and has the highest score of every pool that passes. If nothing was picked, no pool passed."
 
-- Circom circuit `circuits/route_decision.circom` (~4k constraints), Groth16 on bn128. The pool figures, the policy thresholds and the decision are all public signals, so anyone can read them from the proof and re-check.
-- Bound to `snapshotHash`, the SHA-256 of the exact candidate data and policy, returned with every answer.
+- Circom circuit `circuits/route_decision.circom` (~5k constraints), Groth16 on bn128, 12 public signals (zkVerify's Groth16 limit is 16). The policy thresholds and the decision are public; the 8 pools' figures are private inputs bound by an in-circuit Poseidon hash (`dataHash`) of the packed rows plus the SHA-256 of the published snapshot.
+- Every answer returns the full snapshot, so anyone can recompute `dataHash` and re-run the six checks; the server does this on every run (`dataHashMatchesSnapshot`).
 - Every proof is verified locally, then submitted to zkVerify mainnet through Kurier. The UI shows the job status live.
 - Tests show a lying decision can't be proven: picking the emission farm fails, and so does picking a pool that passes but isn't the best.
 - Limits, stated plainly: the proof trusts DeFiLlama's numbers (zkTLS on the API response is the next step); the 8-pool shortlist is cut off-circuit but reproducibly; the trusted setup is a single-contributor demo ceremony.

@@ -1,5 +1,6 @@
 pragma circom 2.1.6;
 include "circomlib/circuits/comparators.circom";
+include "circomlib/circuits/poseidon.circom";
 
 // StableRoute: route-decision circuit.
 //
@@ -8,8 +9,10 @@ include "circomlib/circuits/comparators.circom";
 // has the highest risk-adjusted score of all pools that pass. If it picked nothing,
 // then no pool passed."
 //
-// Every signal is public on purpose: anyone can read the candidate figures and the
-// policy from the proof's public signals and re-run the rules by hand.
+// zkVerify accepts at most 16 public signals for Groth16, so the 8 pools' figures are
+// private inputs, bound by an in-circuit Poseidon hash (dataHash, public) of the packed
+// pool rows plus the snapshot hash. The server publishes the snapshot; anyone can
+// recompute dataHash from it and re-run the rules. Policy and decision stay public.
 //
 // Units: tvl and amount in whole USD; base/reward/mean30 in basis points (5.23% = 523).
 // Score = 2 * baseApy + rewardApy  (token-emission rewards count half: they are
@@ -41,6 +44,7 @@ template RouteDecision(N) {
 
     signal output eligibleMask;
     signal output chosenScore;
+    signal output dataHash;
 
     // binary checks
     hasPick * (hasPick - 1) === 0;
@@ -114,6 +118,15 @@ template RouteDecision(N) {
         mask += elig[i] * (1 << i);
     }
 
+    // bind the private pool data: pack each row (111 bits) and hash with the snapshot hash
+    component h = Poseidon(N + 1);
+    h.inputs[0] <== snapshotHash;
+    for (var i = 0; i < N; i++) {
+        h.inputs[i + 1] <== present[i] + 2 * blue[i] + 4 * down[i] + 8 * tvl[i]
+            + (1 << 51) * base[i] + (1 << 71) * reward[i] + (1 << 91) * mean30[i];
+    }
+    dataHash <== h.out;
+
     sumPick === 1;                         // pick is a valid index
     hasPick * (1 - accElig) === 0;         // picked pool passed every check
     chosenScore <== hasPick * accScore;
@@ -125,5 +138,4 @@ template RouteDecision(N) {
     eligibleMask <== mask;
 }
 
-component main {public [snapshotHash, present, tvl, base, reward, mean30, blue, down,
-    amount, minTvl, capBps, minBaseShareBps, maxSpikePct, requireBlue, allowDown, hasPick, pick]} = RouteDecision(8);
+component main {public [amount, minTvl, capBps, minBaseShareBps, maxSpikePct, requireBlue, allowDown, hasPick, pick]} = RouteDecision(8);

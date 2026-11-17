@@ -35,6 +35,8 @@ const t = async (name, fn) => { await fn(); n++; console.log('  ok -', name); };
     const farm = j.shortlist.find((s) => s.project === 'yieldfarmx');
     assert.equal(farm.passed, false);
     assert.equal(j.proof.verifiedLocally, true);
+    assert.equal(j.proof.dataHashMatchesSnapshot, true);
+    assert.equal(j.proof.publicSignals.length, 12); // zkVerify Groth16 limit is 16
   });
   await t('emission farm and APY spike are rejected even at high risk', async () => {
     const j = JSON.parse((await post('/route', { amount: 5000, risk: 'high', chains: 'base' })).text);

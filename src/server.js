@@ -7,6 +7,7 @@ const { route } = require('./router');
 const { prove, verify } = require('./prover');
 const kurier = require('./kurier');
 const nl = require('./nl');
+const commit = require('./commit');
 
 const PORT = Number(process.env.PORT || 3000);
 const SECRET = process.env.AGENT_GAMES_HMAC_SECRET || '';
@@ -41,7 +42,13 @@ async function run(params, { withProof = true } = {}) {
   delete out.circuitInput;
   if (withProof) {
     const p = await prove(r.circuitInput);
-    out.proof = { system: 'groth16/bn128', verifiedLocally: p.verifiedLocally, provingMs: p.ms, publicSignals: p.publicSignals, proof: p.proof };
+    const expected = await commit.dataHash(r.snapshot);
+    out.proof = {
+      system: 'groth16/bn128', verifiedLocally: p.verifiedLocally, provingMs: p.ms,
+      dataHash: p.publicSignals[2], dataHashMatchesSnapshot: p.publicSignals[2] === expected,
+      publicSignalOrder: ['eligibleMask', 'chosenScore', 'dataHash', 'amount', 'minTvl', 'capBps', 'minBaseShareBps', 'maxSpikePct', 'requireBlue', 'allowDown', 'hasPick', 'pick'],
+      publicSignals: p.publicSignals, proof: p.proof,
+    };
     try {
       out.zkverify = await kurier.submit(p);
     } catch (e) {

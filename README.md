@@ -63,12 +63,12 @@ If nothing passes, the agent says so (`NO_SAFE_ROUTE`) and proves that too, inst
 
 ## What the proof establishes (and what it doesn't)
 
-The circuit (`circuits/route_decision.circom`, ~4k constraints) takes a shortlist of 8 pools and the policy as **public** inputs, so anyone can read every number from the proof itself. It proves:
+The circuit (`circuits/route_decision.circom`, ~5k constraints) takes a shortlist of 8 pools and the policy. zkVerify accepts at most 16 public signals for Groth16, so the pool figures are private inputs bound by an in-circuit **Poseidon hash** (`dataHash`, public) of the packed pool rows plus the snapshot hash. The policy and decision are public. 12 public signals in total. Every response includes the full snapshot, so anyone can recompute `dataHash` (`src/commit.js`) and re-run the rules. It proves:
 
 1. The picked pool passes all six checks, using exactly these policy numbers.
 2. Its score is greater than or equal to the score of **every** pool in the shortlist that passes.
 3. If nothing was picked, then **no** pool in the shortlist passed.
-4. All of this is bound to `snapshotHash`, the SHA-256 of the exact candidate data and policy (returned in every response and served at `GET /snapshot/<hash>`).
+4. All of this is bound to `dataHash`: Poseidon over the 8 packed pool rows and the SHA-256 of the published snapshot. The server recomputes it on every run and reports `dataHashMatchesSnapshot`.
 
 The tests show that a "lying" decision cannot be proven: picking the emission farm fails, and so does picking a pool that passes but isn't the best.
 

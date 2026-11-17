@@ -400,6 +400,7 @@ function render(j) {
     <dl>
       <div><dt>Decision</dt><dd>${p ? 'Route' : 'No safe route'}</dd></div>
       <div><dt>Groth16 proof</dt><dd class="${pr.verifiedLocally ? 'ok' : 'bad'}">${pr.verifiedLocally ? 'Valid' : 'Invalid'} · ${pr.provingMs ?? '–'} ms</dd></div>
+      <div><dt>Data hash</dt><dd class="${pr.dataHashMatchesSnapshot ? 'ok' : 'bad'}">${pr.dataHashMatchesSnapshot ? 'Matches snapshot' : 'Mismatch'}</dd></div>
       <div><dt>Data snapshot</dt><dd><code>${esc(j.snapshotHash.slice(0, 10))}…${esc(j.snapshotHash.slice(-6))}</code></dd></div>
       <div><dt>zkVerify</dt><dd>${zk}</dd></div>
       ${z.jobId ? `<div><dt>Job</dt><dd><code>${esc(z.jobId.slice(0, 8))}…</code></dd></div>` : ''}
