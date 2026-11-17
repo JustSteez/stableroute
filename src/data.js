@@ -40,7 +40,9 @@ function normalize(pools, { chains, token }) {
       symbol: sym,
       poolMeta: p.poolMeta || null,
       underlying: (p.underlyingTokens && p.underlyingTokens[0]) || null,
-      tvl: Math.max(0, Math.min(Math.floor(p.tvlUsd || 0), 2 ** 48 - 1)),
+      // Lending pools: DeFiLlama's tvlUsd is supply minus borrows (idle cash). Pool size means total deposits,
+      // so use totalSupplyUsd when it is reported.
+      tvl: Math.max(0, Math.min(Math.floor(Math.max(p.tvlUsd || 0, p.totalSupplyUsd || 0)), 2 ** 48 - 1)),
       base: bps(p.apyBase),
       reward: bps(p.apyReward),
       mean30: bps(p.apyMean30d),
