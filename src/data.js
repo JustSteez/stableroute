@@ -3,6 +3,7 @@
 const { BLUE_CHIP } = require('./policy');
 
 const YIELDS_URL = process.env.YIELDS_URL || 'https://yields.llama.fi/pools';
+const LEND_URL = process.env.LEND_URL || 'https://yields.llama.fi/lendBorrow';
 const CACHE_MS = 5 * 60 * 1000;
 let cache = { at: 0, pools: null };
 
@@ -13,9 +14,15 @@ async function fetchPools() {
     return { fetchedAt: new Date().toISOString(), pools: JSON.parse(raw).data };
   }
   if (cache.pools && Date.now() - cache.at < CACHE_MS) return { fetchedAt: new Date(cache.at).toISOString(), pools: cache.pools };
-  const r = await fetch(YIELDS_URL, { signal: AbortSignal.timeout(20000) });
+  const [r, lb] = await Promise.all([
+    fetch(YIELDS_URL, { signal: AbortSignal.timeout(20000) }),
+    // /pools reports lending TVL as supply minus borrows; /lendBorrow has total deposits.
+    fetch(LEND_URL, { signal: AbortSignal.timeout(20000) }).then((x) => (x.ok ? x.json() : [])).catch(() => []),
+  ]);
   if (!r.ok) throw new Error(`DeFiLlama yields API returned ${r.status}`);
   const j = await r.json();
+  const supply = new Map((Array.isArray(lb) ? lb : []).map((x) => [x.pool, x.totalSupplyUsd]));
+  for (const p of j.data) { const s = supply.get(p.pool); if (s) p.totalSupplyUsd = s; }
   cache = { at: Date.now(), pools: j.data };
   return { fetchedAt: new Date(cache.at).toISOString(), pools: j.data };
 }
